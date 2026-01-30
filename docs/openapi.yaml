@@ -1,0 +1,188 @@
+# docs/openapi.yaml
+openapi: 3.0.0
+info:
+  title: CENT Music Streaming API
+  description: Comprehensive API for CENT music streaming platform
+  version: 1.0.0
+  contact:
+    name: CENT Development Team
+    email: api@cent.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.cent.com/v1
+    description: Production server
+  - url: https://staging.api.cent.com/v1
+    description: Staging server
+  - url: http://localhost:3000/v1
+    description: Local development
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Music
+    description: Music streaming and metadata
+  - name: Playlists
+    description: Playlist management
+  - name: Social
+    description: Social features and interactions
+  - name: Recommendations
+    description: Music recommendations
+  - name: Admin
+    description: Administrative operations
+
+paths:
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid input or user already exists
+        '429':
+          description: Rate limit exceeded
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+        '403':
+          description: Account disabled or requires 2FA
+
+  /music/stream/{trackId}:
+    get:
+      tags: [Music]
+      summary: Stream audio track
+      parameters:
+        - name: trackId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: quality
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high, very_high, lossless]
+            default: high
+        - name: start
+          in: query
+          schema:
+            type: integer
+            description: Start position in milliseconds
+      responses:
+        '200':
+          description: Audio stream
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+        '206':
+          description: Partial content (range request)
+        '403':
+          description: Insufficient permissions or quality tier
+        '404':
+          description: Track not found
+
+  /playlists:
+    post:
+      tags: [Playlists]
+      summary: Create a new playlist
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePlaylistRequest'
+      responses:
+        '201':
+          description: Playlist created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Playlist'
+
+components:
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - username
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+          minLength: 3
+          maxLength: 20
+          pattern: '^[a-zA-Z0-9_]+$'
+        password:
+          type: string
+          minLength: 8
+          maxLength: 100
+        displayName:
+          type: string
+          maxLength: 50
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        tokens:
+          $ref: '#/components/schemas/TokenPair'
+
+    TokenPair:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
