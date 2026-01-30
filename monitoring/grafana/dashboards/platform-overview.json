@@ -1,0 +1,92 @@
+{
+  "dashboard": {
+    "title": "CENT Platform Dashboard",
+    "panels": [
+      {
+        "title": "API Response Times",
+        "targets": [{
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, handler))",
+          "legendFormat": "{{handler}} p95"
+        }],
+        "type": "graph"
+      },
+      {
+        "title": "Active Users",
+        "targets": [{
+          "expr": "sum(active_users)",
+          "legendFormat": "Active Users"
+        }],
+        "type": "stat"
+      },
+      {
+        "title": "Streaming Bandwidth",
+        "targets": [{
+          "expr": "sum(rate(audio_stream_bytes_total[5m]))",
+          "legendFormat": "Bandwidth"
+        }],
+        "type": "graph",
+        "yAxis": {
+          "format": "bps"
+        }
+      },
+      {
+        "title": "Error Rate",
+        "targets": [{
+          "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m]))",
+          "legendFormat": "Error Rate"
+        }],
+        "type": "gauge",
+        "thresholds": {
+          "steps": [
+            {"color": "green", "value": 0},
+            {"color": "yellow", "value": 0.01},
+            {"color": "red", "value": 0.05}
+          ]
+        }
+      },
+      {
+        "title": "Cache Hit Ratio",
+        "targets": [{
+          "expr": "redis_cache_hits_total / (redis_cache_hits_total + redis_cache_misses_total)",
+          "legendFormat": "Cache Hit Ratio"
+        }],
+        "type": "gauge"
+      },
+      {
+        "title": "Database Connections",
+        "targets": [{
+          "expr": "pg_stat_database_numbackends",
+          "legendFormat": "Connections"
+        }],
+        "type": "graph"
+      },
+      {
+        "title": "Recommendation Engine Performance",
+        "targets": [
+          {
+            "expr": "rate(recommendation_requests_total[5m])",
+            "legendFormat": "Request Rate"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(recommendation_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p95 Latency"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "User Retention",
+        "targets": [{
+          "expr": "retention_7d",
+          "legendFormat": "7 Day Retention"
+        }],
+        "type": "stat"
+      }
+    ],
+    "refresh": "30s",
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    }
+  }
+}
