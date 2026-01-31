@@ -1,4 +1,4 @@
-name: Global Build Search
+name: Mobile Build Final
 on: [push, workflow_dispatch]
 jobs:
   build:
@@ -11,18 +11,18 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Find and Build
+      - name: Locate and Build
         run: |
           PROJECT_ROOT=$(find . -name "pubspec.yaml" -exec dirname {} \; | head -n 1)
           if [ -z "$PROJECT_ROOT" ]; then
-            echo "No project files found!"
+            echo "Error: pubspec.yaml not found. Please ensure project files are uploaded."
             exit 1
           fi
           cd "$PROJECT_ROOT"
           flutter pub get
           flutter build apk --release --no-tree-shake-icons
 
-      - name: Upload
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
