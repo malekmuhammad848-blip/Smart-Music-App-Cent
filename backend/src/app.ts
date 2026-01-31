@@ -3,16 +3,19 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import axios from 'axios';
+import path from 'path';
 
 dotenv.config();
 const app: Application = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve static files (to open admin.html)
+app.use(express.static(path.join(__dirname, '../')));
+
 const MONGO_URI = process.env.MONGO_URI || "";
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || "";
 
-// Database Schema
 const songSchema = new mongoose.Schema({
   title: String,
   artist: String,
@@ -27,13 +30,11 @@ if (MONGO_URI !== "") {
     .catch((err) => console.error("Database Error:", err));
 }
 
-// 1. Get all saved songs for the App
 app.get('/api/songs/all', async (req: Request, res: Response) => {
   const songs = await Song.find();
   res.json(songs);
 });
 
-// 2. Search YouTube
 app.get('/api/search', async (req: Request, res: Response) => {
   const query = req.query.query;
   try {
@@ -50,7 +51,6 @@ app.get('/api/search', async (req: Request, res: Response) => {
   } catch (error) { res.status(500).json({ error: "Search failed" }); }
 });
 
-// 3. Save song to Database
 app.post('/api/songs/add', async (req: Request, res: Response) => {
   try {
     const newSong = new Song(req.body);
@@ -59,7 +59,10 @@ app.post('/api/songs/add', async (req: Request, res: Response) => {
   } catch (error) { res.status(500).json({ error: "Save failed" }); }
 });
 
-app.get('/', (req: Request, res: Response) => { res.status(200).json({ status: "Ready" }); });
+// Open Admin Page on home URL
+app.get('/', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../admin.html'));
+});
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => { console.log(`Server running on port ${PORT}`); });
