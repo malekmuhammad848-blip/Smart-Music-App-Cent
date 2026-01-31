@@ -1,4 +1,4 @@
-name: Mobile Build Final
+name: Final Diagnostic Build
 on: [push, workflow_dispatch]
 jobs:
   build:
@@ -6,25 +6,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: List All Files
+        run: find . -maxdepth 3 -not -path '*/.*'
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      - name: Locate and Build
+      - name: Forced Build
         run: |
           PROJECT_ROOT=$(find . -name "pubspec.yaml" -exec dirname {} \; | head -n 1)
           if [ -z "$PROJECT_ROOT" ]; then
-            echo "Error: pubspec.yaml not found. Please ensure project files are uploaded."
+            echo "CRITICAL ERROR: No pubspec.yaml found in your GitHub. Please upload your lib folder and pubspec.yaml file."
             exit 1
           fi
           cd "$PROJECT_ROOT"
           flutter pub get
           flutter build apk --release --no-tree-shake-icons
 
-      - name: Upload APK
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
+          name: my-app
           path: "**/*.apk"
           
