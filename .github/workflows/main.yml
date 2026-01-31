@@ -28,7 +28,7 @@ jobs:
         flutter build apk --release --no-tree-shake-icons
     
     - name: Upload Android artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@@v4
       with:
         name: android-apks
         path: frontend/build/app/outputs/flutter-apk/app-release.apk
