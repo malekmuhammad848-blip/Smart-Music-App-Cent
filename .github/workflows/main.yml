@@ -1,4 +1,4 @@
-name: Global Auto Build
+name: Debug and Build
 on: [push, workflow_dispatch]
 jobs:
   build:
@@ -6,22 +6,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: List Files
+        run: |
+          echo "Listing all files in the repo to find pubspec.yaml:"
+          find . -maxdepth 3 -not -path '*/.*'
+          
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      - name: Find and Build
+      - name: Emergency Build
         run: |
-          PROJECT_PATH=$(find . -name "pubspec.yaml" -exec dirname {} \; | head -n 1)
-          echo "Project found at: $PROJECT_PATH"
-          cd "$PROJECT_PATH"
+          PUBSPEC_PATH=$(find . -name "pubspec.yaml" | head -n 1)
+          if [ -z "$PUBSPEC_PATH" ]; then
+            echo "ERROR: I literally cannot find pubspec.yaml anywhere in this repo!"
+            exit 1
+          fi
+          cd $(dirname "$PUBSPEC_PATH")
           flutter pub get
           flutter build apk --release --no-tree-shake-icons
 
-      - name: Universal Upload
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: final-mobile-app
+          name: debug-apk
           path: "**/*.apk"
           
