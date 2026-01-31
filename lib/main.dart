@@ -4,6 +4,7 @@ import 'package:youtube_explode_dart/youtube_explode_dart.dart' as exp;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'dart:math' as math;
 
 void main() => runApp(const CentMusicApp());
 
@@ -28,21 +29,19 @@ class MainMusicScreen extends StatefulWidget {
   State<MainMusicScreen> createState() => _MainMusicScreenState();
 }
 
-class _MainMusicScreenState extends State<MainMusicScreen> {
+class _MainMusicScreenState extends State<MainMusicScreen> with SingleTickerProviderStateMixin {
   late YoutubePlayerController _controller;
   final exp.YoutubeExplode yt = exp.YoutubeExplode();
   final TextEditingController _searchController = TextEditingController();
+  late AnimationController _rotationController;
   
   List<exp.Video> searchResults = [];
-  List<exp.Video> trendingSongs = [];
-  List<Map<String, String>> recentSongs = [];
-  
+  List<Map<String, String>> favoriteSongs = [];
   bool isSearching = false;
   bool isPlayerReady = false;
+  bool isRepeat = false;
   
-  String? currentTitle;
-  String? currentArtist;
-  String? currentCover;
+  String? currentTitle, currentArtist, currentCover, currentId;
 
   @override
   void initState() {
@@ -50,71 +49,63 @@ class _MainMusicScreenState extends State<MainMusicScreen> {
     _controller = YoutubePlayerController(
       initialVideoId: '',
       flags: const YoutubePlayerFlags(autoPlay: false, hideControls: true),
-    );
-    loadTrending();
-    loadRecentSongs();
+    )..addListener(_onPlayerStateChange);
+
+    _rotationController = AnimationController(vsync: this, duration: const Duration(seconds: 10));
+    loadFavorites();
   }
 
-  // Load Trending Songs (Top Music)
-  Future<void> loadTrending() async {
-    try {
-      var playlist = await yt.playlists.getVideos('PLFgquLnL59alW3ElYiS2t6gBnL8I9Jp7p'); // Global Top 50 Playlist
+  void _onPlayerStateChange() {
+    if (mounted) {
       setState(() {
-        trendingSongs = playlist.take(10).toList();
+        if (_controller.value.isPlaying) {
+          _rotationController.repeat();
+        } else {
+          _rotationController.stop();
+        }
+        
+        if (_controller.value.playerState == PlayerState.ended && isRepeat) {
+          _controller.play();
+        }
       });
-    } catch (e) {
-      print("Error loading trending: $e");
     }
   }
 
-  // Save song to Recent
-  Future<void> addToRecent(exp.Video video) async {
+  Future<void> loadFavorites() async {
     final prefs = await SharedPreferences.getInstance();
-    List<String> recentStrings = prefs.getStringList('recent_songs') ?? [];
-    
-    Map<String, String> newSong = {
-      'id': video.id.value,
-      'title': video.title,
-      'artist': video.author,
-      'cover': video.thumbnails.highResUrl,
-    };
-
-    recentStrings.removeWhere((item) => json.decode(item)['id'] == video.id.value);
-    recentStrings.insert(0, json.encode(newSong));
-    
-    if (recentStrings.length > 10) recentStrings.removeLast();
-    
-    await prefs.setStringList('recent_songs', recentStrings);
-    loadRecentSongs();
-  }
-
-  Future<void> loadRecentSongs() async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String> recentStrings = prefs.getStringList('recent_songs') ?? [];
+    List<String> favs = prefs.getStringList('fav_songs') ?? [];
     setState(() {
-      recentSongs = recentStrings.map((item) => Map<String, String>.from(json.decode(item))).toList();
+      favoriteSongs = favs.map((item) => Map<String, String>.from(json.decode(item))).toList();
     });
   }
 
-  Future<void> searchYouTube(String query) async {
-    if (query.isEmpty) return;
-    setState(() => isSearching = true);
-    try {
-      var search = await yt.search.search(query);
-      setState(() {
-        searchResults = search.toList();
-        isSearching = false;
-      });
-    } catch (e) {
-      setState(() => isSearching = false);
+  Future<void> toggleFavorite() async {
+    if (currentId == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    List<String> favs = prefs.getStringList('fav_songs') ?? [];
+    
+    bool exists = favs.any((item) => json.decode(item)['id'] == currentId);
+    if (exists) {
+      favs.removeWhere((item) => json.decode(item)['id'] == currentId);
+    } else {
+      favs.add(json.encode({'id': currentId, 'title': currentTitle, 'artist': currentArtist, 'cover': currentCover}));
     }
+    await prefs.setStringList('fav_songs', favs);
+    loadFavorites();
+  }
+
+  Future<void> searchYouTube(String query) async {
+    setState(() => isSearching = true);
+    var search = await yt.search.search(query);
+    setState(() {
+      searchResults = search.toList();
+      isSearching = false;
+    });
   }
 
   void playMusic(String id, String title, String artist, String cover) {
     setState(() {
-      currentTitle = title;
-      currentArtist = artist;
-      currentCover = cover;
+      currentId = id; currentTitle = title; currentArtist = artist; currentCover = cover;
       isPlayerReady = true;
     });
     _controller.load(id);
@@ -126,8 +117,7 @@ class _MainMusicScreenState extends State<MainMusicScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("CENT MUSIC", style: TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        backgroundColor: Colors.transparent, elevation: 0,
       ),
       body: Stack(
         children: [
@@ -139,10 +129,9 @@ class _MainMusicScreenState extends State<MainMusicScreen> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: "Search any song...",
+                    hintText: "Search for music...",
                     prefixIcon: const Icon(Icons.search, color: Color(0xFFD4AF37)),
-                    filled: true,
-                    fillColor: const Color(0xFF1A1A1A),
+                    filled: true, fillColor: const Color(0xFF1A1A1A),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
                   ),
                   onSubmitted: (value) => searchYouTube(value),
@@ -150,137 +139,96 @@ class _MainMusicScreenState extends State<MainMusicScreen> {
               ),
               Expanded(
                 child: isSearching 
-                  ? const Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37)))
-                  : SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (searchResults.isNotEmpty) ...[
-                            const SectionHeader(title: "Search Results"),
-                            buildVideoList(searchResults, true),
-                          ] else ...[
-                            if (recentSongs.isNotEmpty) ...[
-                              const SectionHeader(title: "Recently Played"),
-                              buildRecentList(),
-                            ],
-                            const SectionHeader(title: "Trending Now"),
-                            buildVideoList(trendingSongs, false),
-                          ],
-                          const SizedBox(height: 100),
-                        ],
-                      ),
-                    ),
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37)))
+                : ListView.builder(
+                    itemCount: searchResults.length,
+                    itemBuilder: (context, index) {
+                      final video = searchResults[index];
+                      return ListTile(
+                        onTap: () => playMusic(video.id.value, video.title, video.author, video.thumbnails.highResUrl),
+                        leading: ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(video.thumbnails.lowResUrl, width: 50, height: 50, fit: BoxFit.cover)),
+                        title: Text(video.title, maxLines: 1),
+                        subtitle: Text(video.author),
+                        trailing: const Icon(Icons.play_circle_outline, color: Color(0xFFD4AF37)),
+                      );
+                    },
+                  ),
               ),
             ],
           ),
-          if (isPlayerReady) buildMiniPlayer(),
+          if (isPlayerReady) _buildProfessionalPlayer(),
         ],
       ),
     );
   }
 
-  Widget buildVideoList(List<exp.Video> videos, bool isSearch) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: videos.length,
-      itemBuilder: (context, index) {
-        final video = videos[index];
-        return ListTile(
-          onTap: () {
-            playMusic(video.id.value, video.title, video.author, video.thumbnails.highResUrl);
-            addToRecent(video);
-          },
-          leading: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: CachedNetworkImage(imageUrl: video.thumbnails.lowResUrl, width: 50, height: 50, fit: BoxFit.cover),
-          ),
-          title: Text(video.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-          subtitle: Text(video.author, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-          trailing: const Icon(Icons.play_circle_fill, color: Color(0xFFD4AF37)),
-        );
-      },
-    );
-  }
-
-  Widget buildRecentList() {
-    return SizedBox(
-      height: 160,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        itemCount: recentSongs.length,
-        itemBuilder: (context, index) {
-          final song = recentSongs[index];
-          return GestureDetector(
-            onTap: () => playMusic(song['id']!, song['title']!, song['artist']!, song['cover']!),
-            child: Container(
-              width: 120,
-              margin: const EdgeInsets.only(right: 15),
-              child: Column(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: CachedNetworkImage(imageUrl: song['cover']!, height: 100, width: 120, fit: BoxFit.cover),
+  Widget _buildProfessionalPlayer() {
+    return Container(
+      color: const Color(0xFF0F0F0F),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 50),
+          // القرص الدوار
+          AnimatedBuilder(
+            animation: _rotationController,
+            builder: (context, child) {
+              return Transform.rotate(
+                angle: _rotationController.value * 2 * math.pi,
+                child: Container(
+                  width: 250, height: 250,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.black, width: 10),
+                    image: DecorationImage(image: NetworkImage(currentCover ?? ''), fit: BoxFit.cover),
+                    boxShadow: [BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.3), blurRadius: 20, spreadRadius: 5)],
                   ),
-                  const SizedBox(height: 5),
-                  Text(song['title']!, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  Text(song['artist']!, maxLines: 1, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 30),
+          Text(currentTitle ?? '', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+          Text(currentArtist ?? '', style: const TextStyle(color: Colors.grey)),
+          const SizedBox(height: 20),
+          // شريط التقدم
+          ProgressBar(controller: _controller),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(icon: Icon(isRepeat ? Icons.repeat_one : Icons.repeat, color: isRepeat ? const Color(0xFFD4AF37) : Colors.white), onPressed: () => setState(() => isRepeat = !isRepeat)),
+              IconButton(icon: const Icon(Icons.skip_previous, size: 40), onPressed: () {}),
+              IconButton(
+                icon: Icon(_controller.value.isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled, size: 70, color: const Color(0xFFD4AF37)),
+                onPressed: () => setState(() => _controller.value.isPlaying ? _controller.pause() : _controller.play()),
               ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget buildMiniPlayer() {
-    return Positioned(
-      bottom: 15, left: 10, right: 10,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFD4AF37), width: 0.5),
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: CachedNetworkImage(imageUrl: currentCover ?? '', width: 50, height: 50, fit: BoxFit.cover),
-            ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(currentTitle ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Text(currentArtist ?? '', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                ],
+              IconButton(icon: const Icon(Icons.skip_next, size: 40), onPressed: () {}),
+              IconButton(
+                icon: Icon(favoriteSongs.any((s) => s['id'] == currentId) ? Icons.favorite : Icons.favorite_border, color: Colors.red),
+                onPressed: toggleFavorite,
               ),
-            ),
-            IconButton(
-              icon: Icon(_controller.value.isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled, size: 40, color: const Color(0xFFD4AF37)),
-              onPressed: () => setState(() => _controller.value.isPlaying ? _controller.pause() : _controller.play()),
-            ),
-          ],
-        ),
+            ],
+          ),
+          TextButton(onPressed: () => setState(() => isPlayerReady = false), child: const Text("Close Player", style: TextStyle(color: Colors.grey))),
+        ],
       ),
     );
   }
 }
 
-class SectionHeader extends StatelessWidget {
-  final String title;
-  const SectionHeader({super.key, required this.title});
+class ProgressBar extends StatelessWidget {
+  final YoutubePlayerController controller;
+  const ProgressBar({super.key, required this.controller});
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(15),
-      child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFFD4AF37))),
+    return Slider(
+      activeColor: const Color(0xFFD4AF37),
+      inactiveColor: Colors.grey,
+      value: controller.value.position.inSeconds.toDouble(),
+      max: controller.metadata.duration.inSeconds.toDouble(),
+      onChanged: (value) {
+        controller.seekTo(Duration(seconds: value.toInt()));
+      },
     );
   }
 }
