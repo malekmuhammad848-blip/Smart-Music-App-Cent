@@ -16,13 +16,10 @@ class CentMusicApp extends StatelessWidget {
       theme: ThemeData.dark().copyWith(
         primaryColor: const Color(0xFFD4AF37),
         scaffoldBackgroundColor: const Color(0xFF0F0F0F),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
+        colorScheme: ColorScheme.fromSwatch().copyWith(
+          secondary: const Color(0xFFD4AF37),
+          brightness: Brightness.dark,
         ),
-        colorScheme: ColorScheme.fromSwatch(
-          primarySwatch: Colors.yellow,
-        ).copyWith(secondary: const Color(0xFFD4AF37)),
       ),
       home: const MainMusicScreen(),
     );
@@ -42,25 +39,23 @@ class _MainMusicScreenState extends State<MainMusicScreen> {
   final AudioPlayer _player = AudioPlayer();
   final yt = YoutubeExplode();
   
-  String? currentPlayingTitle;
-  String? currentPlayingArtist;
-  String? currentPlayingCover;
+  String? currentTitle;
+  String? currentArtist;
+  String? currentCover;
   bool isPlaying = false;
+  bool isBuffering = false;
 
   @override
   void initState() {
     super.initState();
     fetchSongs();
+    
     _player.playerStateStream.listen((state) {
       if (mounted) {
         setState(() {
           isPlaying = state.playing;
-          if (state.processingState == ProcessingState.completed) {
-            currentPlayingTitle = null;
-            currentPlayingArtist = null;
-            currentPlayingCover = null;
-            isPlaying = false;
-          }
+          isBuffering = state.processingState == ProcessingState.buffering || 
+                        state.processingState == ProcessingState.loading;
         });
       }
     });
@@ -73,34 +68,37 @@ class _MainMusicScreenState extends State<MainMusicScreen> {
         setState(() {
           songs = json.decode(response.body);
           isLoading = false;
-          errorMessage = "";
         });
-      } else {
-        setState(() { errorMessage = "Server Error: ${response.statusCode}"; isLoading = false; });
       }
     } catch (e) {
-      setState(() { errorMessage = "Connection Failed! Check Internet or Server."; isLoading = false; });
+      setState(() {
+        errorMessage = "Check your connection";
+        isLoading = false;
+      });
     }
   }
 
   Future<void> playMusic(String videoId, String title, String artist, String cover) async {
-    setState(() { 
-      currentPlayingTitle = "Loading: $title"; 
-      currentPlayingArtist = artist;
-      currentPlayingCover = cover;
-      isPlaying = true;
-    });
-    
     try {
+      setState(() {
+        currentTitle = "Loading...";
+        currentArtist = artist;
+        currentCover = cover;
+      });
+
       var manifest = await yt.videos.streamsClient.getManifest(videoId);
-      var audioUrl = manifest.audioOnly.withHighestBitrate().url;
+      var audioUrl = manifest.audioOnly.withHighestBitrate().url.toString();
       
-      await _player.setUrl(audioUrl.toString());
+      await _player.setAudioSource(AudioSource.uri(Uri.parse(audioUrl)));
       _player.play();
       
-      setState(() { currentPlayingTitle = title; });
+      setState(() {
+        currentTitle = title;
+      });
     } catch (e) {
-      setState(() { currentPlayingTitle = "Error playing: $title"; isPlaying = false; });
+      setState(() {
+        currentTitle = "Playback Error";
+      });
     }
   }
 
@@ -115,85 +113,75 @@ class _MainMusicScreenState extends State<MainMusicScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("CENT MUSIC", style: TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+        title: const Text("CENT MUSIC", style: TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold)),
         centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       body: Stack(
         children: [
           isLoading 
             ? const Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37)))
-            : errorMessage.isNotEmpty
-              ? Center(child: Text(errorMessage, style: const TextStyle(color: Colors.redAccent, fontSize: 16)))
-              : songs.isEmpty
-                ? const Center(child: Text("No Songs Found. Add from Admin Panel!", style: TextStyle(color: Colors.grey, fontSize: 16)))
-                : ListView.builder(
-                    padding: EdgeInsets.only(bottom: currentPlayingTitle != null ? 90 : 20),
-                    itemCount: songs.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        onTap: () => playMusic(songs[index]['youtubeId'], songs[index]['title'], songs[index]['artist'], songs[index]['cover']),
-                        leading: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: CachedNetworkImage(
-                            imageUrl: songs[index]['cover'],
-                            width: 50,
-                            height: 50,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => const CircularProgressIndicator(color: Color(0xFFD4AF37)),
-                            errorWidget: (context, url, error) => const Icon(Icons.music_note, color: Colors.grey),
-                          ),
-                        ),
-                        title: Text(songs[index]['title'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                        subtitle: Text(songs[index]['artist'], style: const TextStyle(color: Colors.grey, fontSize: 13)),
-                        trailing: Icon(
-                          (currentPlayingTitle == songs[index]['title'] && isPlaying) ? Icons.pause_circle_filled : Icons.play_circle_fill,
-                          color: (currentPlayingTitle == songs[index]['title'] && isPlaying) ? Colors.redAccent : const Color(0xFFD4AF37),
-                          size: 30,
-                        ),
-                      );
-                    },
-                  ),
-          if (currentPlayingTitle != null)
+            : ListView.builder(
+                padding: EdgeInsets.only(bottom: currentTitle != null ? 100 : 20),
+                itemCount: songs.length,
+                itemBuilder: (context, index) {
+                  final song = songs[index];
+                  bool isThisSelected = currentTitle == song['title'];
+                  return ListTile(
+                    onTap: () => playMusic(song['youtubeId'], song['title'], song['artist'], song['cover']),
+                    leading: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: CachedNetworkImage(
+                        imageUrl: song['cover'],
+                        width: 50, height: 50, fit: BoxFit.cover,
+                        errorWidget: (context, url, error) => const Icon(Icons.music_note),
+                      ),
+                    ),
+                    title: Text(song['title'], style: TextStyle(color: isThisSelected ? const Color(0xFFD4AF37) : Colors.white, fontWeight: FontWeight.bold)),
+                    subtitle: Text(song['artist'], style: const TextStyle(color: Colors.grey)),
+                    trailing: Icon(isThisSelected && isPlaying ? Icons.pause_circle : Icons.play_circle, color: const Color(0xFFD4AF37)),
+                  );
+                },
+              ),
+          
+          if (currentTitle != null)
             Positioned(
-              bottom: 0, left: 0, right: 0,
+              bottom: 10, left: 10, right: 10,
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E1E),
-                  border: Border(top: BorderSide(color: const Color(0xFFD4AF37).withOpacity(0.5), width: 0.5)),
+                  color: const Color(0xFF1A1A1A),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: const Color(0xFFD4AF37), width: 0.5),
                 ),
                 child: Row(
                   children: [
-                    if (currentPlayingCover != null)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(5),
-                        child: CachedNetworkImage(
-                          imageUrl: currentPlayingCover!,
-                          width: 40,
-                          height: 40,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => const Icon(Icons.audiotrack, color: Colors.grey),
-                          errorWidget: (context, url, error) => const Icon(Icons.audiotrack, color: Colors.grey),
-                        ),
-                      ),
-                    const SizedBox(width: 10),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: CachedNetworkImage(imageUrl: currentCover ?? '', width: 45, height: 45, fit: BoxFit.cover),
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(currentPlayingTitle!, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                          Text(currentPlayingArtist!, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                          Text(currentTitle!, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          Text(currentArtist ?? '', maxLines: 1, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                         ],
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill, size: 40),
-                      color: const Color(0xFFD4AF37),
-                      onPressed: () {
-                        if (isPlaying) { _player.pause(); } else { _player.play(); }
-                        setState(() { isPlaying = !isPlaying; });
-                      },
-                    )
+                    if (isBuffering)
+                      const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFD4AF37))),
+                      )
+                    else
+                      IconButton(
+                        icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow, color: const Color(0xFFD4AF37)),
+                        onPressed: () => isPlaying ? _player.pause() : _player.play(),
+                      ),
                   ],
                 ),
               ),
