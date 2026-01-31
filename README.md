@@ -23,3 +23,6 @@ npm run dev
 cd frontend
 flutter pub get
 flutter run
+cd ml-service
+pip install -r requirements.txt
+uvicorn app.main:app --reload
