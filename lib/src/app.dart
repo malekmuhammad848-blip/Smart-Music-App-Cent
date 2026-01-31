@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cent_music/src/core/theme/app_theme.dart';
-import 'package:cent_music/src/features/auth/presentation/providers/auth_provider.dart';
-import 'package:cent_music/src/features/player/presentation/providers/player_provider.dart';
 import 'package:cent_music/src/routes/app_router.dart';
+
+final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 
 class CentMusicApp extends ConsumerWidget {
   CentMusicApp({super.key});
