@@ -1,26 +1,27 @@
-name: Ultimate APK Build
+name: Build APK
 on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v4 # تحديث للإصدار الجديد
+      - uses: subosito/flutter-action@v2 # تحديث للإصدار الجديد
         with:
           channel: 'stable'
-      - name: Build and Move
+      
+      - name: Install dependencies
         run: |
-          find . -name "pubspec.yaml" -exec dirname {} \; | while read dir; do
-            cd "$dir"
-            flutter pub get
-            flutter build apk --release
-            # نقل الملف لمجلد المشروع الرئيسي لضمان العثور عليه
-            cp build/app/outputs/flutter-apk/app-release.apk $GITHUB_WORKSPACE/final-app.apk
-            cd -
-          done
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+          if [ -d "frontend" ]; then cd frontend; fi
+          flutter pub get
+          
+      - name: Build APK
+        run: |
+          if [ -d "frontend" ]; then cd frontend; fi
+          flutter build apk --release
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4 # تحديث للإصدار الجديد
         with:
-          name: my-app-bundle
-          path: final-app.apk
+          name: app-release
+          path: "**/build/app/outputs/flutter-apk/app-release.apk"
           
