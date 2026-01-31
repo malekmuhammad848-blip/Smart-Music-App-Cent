@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cent Music Admin</title>
+    <style>
+        body { background: #121212; color: white; font-family: sans-serif; padding: 20px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; }
+        button { background: #ffd700; color: black; padding: 10px; border: none; width: 100%; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>Add New Song</h2>
+    <input type="text" id="title" placeholder="Song Title">
+    <input type="text" id="artist" placeholder="Artist Name">
+    <input type="text" id="youtubeId" placeholder="YouTube ID">
+    <input type="text" id="cover" placeholder="Cover Image URL">
+    <button onclick="addSong()">Add to App</button>
+
+    <script>
+        async function addSong() {
+            const data = {
+                title: document.getElementById('title').value,
+                artist: document.getElementById('artist').value,
+                youtubeId: document.getElementById('youtubeId').value,
+                cover: document.getElementById('cover').value
+            };
+            const res = await fetch('https://smart-music-app-cent-12.onrender.com/api/songs/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            alert(result.message || result.error);
+        }
+    </script>
+</body>
+</html>
