@@ -8,18 +8,19 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - name: Clean and Build
+      - name: Build and Move
         run: |
           find . -name "pubspec.yaml" -exec dirname {} \; | while read dir; do
             cd "$dir"
             flutter pub get
-            flutter build apk --release --no-tree-shake-icons
+            flutter build apk --release
+            # نقل الملف لمجلد المشروع الرئيسي لضمان العثور عليه
+            cp build/app/outputs/flutter-apk/app-release.apk $GITHUB_WORKSPACE/final-app.apk
             cd -
           done
-      - name: Force Upload APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: final-app-apk
-          path: "**/*.apk"
-          if-no-files-found: error
+          name: my-app-bundle
+          path: final-app.apk
           
