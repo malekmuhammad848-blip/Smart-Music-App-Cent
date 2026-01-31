@@ -36,18 +36,6 @@ android {
         versionName "1.0.0"
         multiDexEnabled true
     }
-
-    buildTypes {
-        release {
-            signingConfig signingConfigs.debug
-            minifyEnabled false
-            shrinkResources false
-        }
-    }
-}
-
-flutter {
-    source "../.."
 }
 
 dependencies {
@@ -55,7 +43,7 @@ dependencies {
     implementation 'androidx.multidex:multidex:2.0.1'
 }
 
-// Fixed block to force namespace on all libraries
+// هذا الجزء هو الحل النهائي لمشكلة الصورة التي أرسلتها
 subprojects {
     afterEvaluate { project ->
         if (project.hasProperty('android')) {
