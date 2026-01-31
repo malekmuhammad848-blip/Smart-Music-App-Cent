@@ -16,8 +16,8 @@ apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
-    compileSdkVersion 34
     namespace "com.cent.music"
+    compileSdkVersion 34
 
     defaultConfig {
         applicationId "com.cent.music"
@@ -30,8 +30,6 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.debug
-            minifyEnabled false
-            shrinkResources false
         }
     }
 }
