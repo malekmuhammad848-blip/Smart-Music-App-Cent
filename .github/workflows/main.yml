@@ -1,40 +1,23 @@
 name: Build APK
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-
+on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Java
-        uses: actions/setup-java@v3
+      - uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '17'
-          
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.0'
-          
-      - name: Clean and Repair
-        run: |
-          flutter clean
-          flutter pub get
-          
-      - name: Build APK
-        run: flutter build apk --release --no-tree-shake-icons
-        
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+          cache: false
+      - run: flutter clean
+      - run: flutter pub get
+      - run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
         with:
-          name: release-apk
+          name: app-release
           path: build/app/outputs/flutter-apk/app-release.apk
           
