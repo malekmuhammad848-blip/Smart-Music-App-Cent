@@ -1,44 +1,30 @@
-import express, { Request, Response } from 'express';
+import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
-import compression from 'compression';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
+import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 
-const app = express();
-const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: { origin: "*" }
-});
+dotenv.config();
 
-app.use(helmet());
+const app: Application = express();
+
+// Middlewares
 app.use(cors());
-app.use(compression());
 app.use(express.json());
 
+// MongoDB Connection
+const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/music_db";
+
+mongoose.connect(MONGO_URI)
+  .then(() => console.log("✅ Database Connected"))
+  .catch((err) => console.error("❌ Database Error:", err));
+
+// Test Route
 app.get('/', (req: Request, res: Response) => {
-  res.json({
-    status: "CENT_MUSIC_LIVE",
-    system: "PRO_BACKEND_V1",
-    timestamp: new Date().toISOString(),
-    endpoints: {
-      stream_test: "/stream/test",
-      health: "/health"
-    }
-  });
+  res.status(200).json({ status: "Server is Running", message: "Music App API Live" });
 });
 
-app.get('/health', (req: Request, res: Response) => {
-  res.status(200).send('OK');
-});
-
-app.get('/stream/test', (req: Request, res: Response) => {
-  const demoTrack = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
-  res.redirect(demoTrack);
-});
-
+// Port Setting for Render
 const PORT = process.env.PORT || 10000;
-
-httpServer.listen(PORT, () => {
-  console.log(`PRO_SERVER_ACTIVE_PORT_${PORT}`);
+app.listen(PORT, () => {
+  console.log(`🚀 Server on port ${PORT}`);
 });
