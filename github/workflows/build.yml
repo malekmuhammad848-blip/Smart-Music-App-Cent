@@ -1,0 +1,31 @@
+name: Mobile Build Final
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Find and Build
+        run: |
+          # Automatically find pubspec.yaml and go to its folder
+          PROJECT_ROOT=$(find . -name "pubspec.yaml" -exec dirname {} \; | head -n 1)
+          if [ -z "$PROJECT_ROOT" ]; then
+            echo "Error: No pubspec.yaml found!"
+            exit 1
+          fi
+          cd "$PROJECT_ROOT"
+          flutter pub get
+          flutter build apk --release --no-tree-shake-icons
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: "**/build/app/outputs/flutter-apk/app-release.apk"
+          
