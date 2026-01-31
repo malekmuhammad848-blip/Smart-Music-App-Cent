@@ -1,35 +1,25 @@
-name: Debug and Build
+name: Final Mobile Build
 on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: List Files
-        run: |
-          echo "Listing all files in the repo to find pubspec.yaml:"
-          find . -maxdepth 3 -not -path '*/.*'
-          
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      - name: Emergency Build
+      - name: Build APK
         run: |
-          PUBSPEC_PATH=$(find . -name "pubspec.yaml" | head -n 1)
-          if [ -z "$PUBSPEC_PATH" ]; then
-            echo "ERROR: I literally cannot find pubspec.yaml anywhere in this repo!"
-            exit 1
-          fi
-          cd $(dirname "$PUBSPEC_PATH")
+          cd mobile
           flutter pub get
           flutter build apk --release --no-tree-shake-icons
 
-      - name: Upload
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: debug-apk
-          path: "**/*.apk"
+          name: success-app
+          path: "mobile/build/app/outputs/flutter-apk/app-release.apk"
           
