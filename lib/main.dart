@@ -38,6 +38,7 @@ class _MainMusicScreenState extends State<MainMusicScreen> {
   String? currentArtist;
   String? currentCover;
   bool isPlaying = false;
+  bool isLoadingAudio = false;
 
   @override
   void initState() {
@@ -47,7 +48,6 @@ class _MainMusicScreenState extends State<MainMusicScreen> {
     });
   }
 
-  // Search function to find any song on YouTube
   Future<void> searchYouTube(String query) async {
     if (query.isEmpty) return;
     setState(() => isSearching = true);
@@ -63,22 +63,34 @@ class _MainMusicScreenState extends State<MainMusicScreen> {
   }
 
   Future<void> playMusic(Video video) async {
-    try {
-      setState(() {
-        currentTitle = "Loading...";
-        currentArtist = video.author;
-        currentCover = video.thumbnails.highResUrl;
-      });
+    setState(() {
+      isLoadingAudio = true;
+      currentTitle = "Fetching Audio...";
+      currentArtist = video.author;
+      currentCover = video.thumbnails.highResUrl;
+    });
 
+    try {
+      // Get the stream manifest
       var manifest = await yt.videos.streamsClient.getManifest(video.id);
-      var audioUrl = manifest.audioOnly.withHighestBitrate().url.toString();
       
-      await _player.setAudioSource(AudioSource.uri(Uri.parse(audioUrl)));
+      // Get the best audio-only stream
+      var audioStream = manifest.audioOnly.withHighestBitrate();
+      
+      // Set source and play
+      await _player.setAudioSource(AudioSource.uri(Uri.parse(audioStream.url.toString())));
       _player.play();
       
-      setState(() => currentTitle = video.title);
+      setState(() {
+        currentTitle = video.title;
+        isLoadingAudio = false;
+      });
     } catch (e) {
-      setState(() => currentTitle = "Playback Error");
+      setState(() {
+        currentTitle = "Error: Use another song";
+        isLoadingAudio = false;
+        isPlaying = false;
+      });
     }
   }
 
@@ -97,17 +109,17 @@ class _MainMusicScreenState extends State<MainMusicScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
+          preferredSize: const Size.fromHeight(70),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+            padding: const EdgeInsets.all(10),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: "Search for any song...",
+                hintText: "Search any song...",
                 prefixIcon: const Icon(Icons.search, color: Color(0xFFD4AF37)),
                 filled: true,
                 fillColor: const Color(0xFF1A1A1A),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
               ),
               onSubmitted: (value) => searchYouTube(value),
             ),
@@ -119,7 +131,6 @@ class _MainMusicScreenState extends State<MainMusicScreen> {
           isSearching 
             ? const Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37)))
             : ListView.builder(
-                padding: EdgeInsets.only(bottom: currentTitle != null ? 100 : 20),
                 itemCount: searchResults.length,
                 itemBuilder: (context, index) {
                   final video = searchResults[index];
@@ -127,35 +138,31 @@ class _MainMusicScreenState extends State<MainMusicScreen> {
                     onTap: () => playMusic(video),
                     leading: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: CachedNetworkImage(
-                        imageUrl: video.thumbnails.lowResUrl,
-                        width: 50, height: 50, fit: BoxFit.cover,
-                      ),
+                      child: CachedNetworkImage(imageUrl: video.thumbnails.lowResUrl, width: 50, height: 50, fit: BoxFit.cover),
                     ),
-                    title: Text(video.title, maxLines: 2, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    title: Text(video.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14)),
                     subtitle: Text(video.author, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                    trailing: const Icon(Icons.play_circle_fill, color: Color(0xFFD4AF37)),
+                    trailing: const Icon(Icons.play_arrow_rounded, color: Color(0xFFD4AF37)),
                   );
                 },
               ),
-          
           if (currentTitle != null)
             Positioned(
               bottom: 15, left: 10, right: 10,
               child: Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: const Color(0xFF1A1A1A),
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: const Color(0xFFD4AF37), width: 0.5),
                 ),
                 child: Row(
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: CachedNetworkImage(imageUrl: currentCover ?? '', width: 45, height: 45, fit: BoxFit.cover),
+                      borderRadius: BorderRadius.circular(10),
+                      child: CachedNetworkImage(imageUrl: currentCover ?? '', width: 50, height: 50, fit: BoxFit.cover),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 15),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,10 +173,13 @@ class _MainMusicScreenState extends State<MainMusicScreen> {
                         ],
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow, color: const Color(0xFFD4AF37)),
-                      onPressed: () => isPlaying ? _player.pause() : _player.play(),
-                    ),
+                    if (isLoadingAudio)
+                      const SizedBox(width: 25, height: 25, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFD4AF37)))
+                    else
+                      IconButton(
+                        icon: Icon(isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled, size: 40, color: const Color(0xFFD4AF37)),
+                        onPressed: () => isPlaying ? _player.pause() : _player.play(),
+                      ),
                   ],
                 ),
               ),
