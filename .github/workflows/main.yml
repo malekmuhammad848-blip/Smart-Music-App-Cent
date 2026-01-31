@@ -1,35 +1,40 @@
-name: Final Diagnostic Build
-on: [push, workflow_dispatch]
+name: Build APK
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Inspect Files
-        run: |
-          echo "Listing all files in the repository:"
-          find . -maxdepth 3 -not -path '*/.*'
-
+      
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
-
-      - name: Try Build
+          flutter-version: '3.19.0'
+          
+      - name: Clean and Repair
         run: |
-          PROJECT_ROOT=$(find . -name "pubspec.yaml" -exec dirname {} \; | head -n 1)
-          if [ -z "$PROJECT_ROOT" ]; then
-            echo "ERROR: Your repository is missing the pubspec.yaml file."
-            exit 1
-          fi
-          cd "$PROJECT_ROOT"
+          flutter clean
           flutter pub get
-          flutter build apk --release --no-tree-shake-icons
-
-      - name: Upload
+          
+      - name: Build APK
+        run: flutter build apk --release --no-tree-shake-icons
+        
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: my-app
-          path: "**/*.apk"
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           
