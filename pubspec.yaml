@@ -12,7 +12,7 @@ dependencies:
   http: ^1.1.0
   rive: ^0.11.1
   provider: ^6.0.5
-  just_audio: ^0.9.35
+  just_audio: ^0.9.36 # تم تحديثه لأحدث نسخة لضمان التوافق
   audio_service: ^0.18.12
   path_provider: ^2.1.1
   cached_network_image: ^3.3.0
@@ -20,6 +20,7 @@ dependencies:
   google_fonts: ^6.1.0
   flutter_svg: ^2.0.7
   dio: ^5.3.3
+  youtube_explode_dart: ^2.2.2 # تم إضافة هذه المكتبة
 
 dev_dependencies:
   flutter_test:
