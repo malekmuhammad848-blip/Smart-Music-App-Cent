@@ -1,34 +1,44 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cent_music/src/routes/app_router.dart';
 
-final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
-
-class CentMusicApp extends ConsumerWidget {
-  CentMusicApp({super.key});
-
-  final _appRouter = AppRouter();
+class CentMusicApp extends StatelessWidget {
+  const CentMusicApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
-    
-    return MaterialApp.router(
+  Widget build(BuildContext context) {
+    return MaterialApp(
       title: 'CENT Music',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorSchemeSeed: Colors.blue,
+        brightness: Brightness.light,
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.dark,
+        colorSchemeSeed: Colors.blue,
+        brightness: Brightness.dark,
+      ),
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('CENT Music'),
+          centerTitle: true,
+        ),
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.music_note, size: 100, color: Colors.blue),
+              SizedBox(height: 20),
+              Text(
+                'Welcome to CENT Music',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+              Text('Build Successful! Wait for the APK.'),
+            ],
+          ),
         ),
       ),
-      themeMode: themeMode,
-      routerConfig: _appRouter.config(),
-      debugShowCheckedModeBanner: false,
     );
   }
 }
