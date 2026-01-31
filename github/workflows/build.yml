@@ -1,4 +1,4 @@
-name: Mobile Build Final
+name: Final Mobile Build
 on: [push, workflow_dispatch]
 jobs:
   build:
@@ -11,21 +11,15 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Find and Build
+      - name: Build APK
         run: |
-          # Automatically find pubspec.yaml and go to its folder
-          PROJECT_ROOT=$(find . -name "pubspec.yaml" -exec dirname {} \; | head -n 1)
-          if [ -z "$PROJECT_ROOT" ]; then
-            echo "Error: No pubspec.yaml found!"
-            exit 1
-          fi
-          cd "$PROJECT_ROOT"
+          cd mobile
           flutter pub get
           flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
-          path: "**/build/app/outputs/flutter-apk/app-release.apk"
+          name: my-app
+          path: "mobile/build/app/outputs/flutter-apk/app-release.apk"
           
