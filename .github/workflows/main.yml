@@ -1,4 +1,4 @@
-name: Build APK Final
+name: Ultimate APK Build
 on: [push, workflow_dispatch]
 jobs:
   build:
@@ -8,18 +8,18 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: true
-      - name: Install Dependencies
+      - name: Clean and Build
         run: |
-          if [ -d "frontend" ]; then cd frontend; fi
-          flutter pub get
-      - name: Build APK
-        run: |
-          if [ -d "frontend" ]; then cd frontend; fi
-          flutter build apk --release
-      - name: Upload Artifact
+          find . -name "pubspec.yaml" -exec dirname {} \; | while read dir; do
+            echo "Building in $dir..."
+            cd "$dir"
+            flutter clean
+            flutter pub get
+            flutter build apk --release
+          done
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: my-app-apk
+          name: final-app-apk
           path: "**/build/app/outputs/flutter-apk/app-release.apk"
           
