@@ -1,4 +1,4 @@
-name: Ultimate Final Build
+name: Global Auto Build
 on: [push, workflow_dispatch]
 jobs:
   build:
@@ -8,13 +8,18 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - name: Force Build
+
+      - name: Find and Build
         run: |
+          PROJECT_PATH=$(find . -name "pubspec.yaml" -exec dirname {} \; | head -n 1)
+          echo "Project found at: $PROJECT_PATH"
+          cd "$PROJECT_PATH"
           flutter pub get
           flutter build apk --release --no-tree-shake-icons
-      - name: Upload APK
+
+      - name: Universal Upload
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
-          path: "**/build/app/outputs/flutter-apk/app-release.apk"
+          name: my-final-app
+          path: "**/*.apk"
           
