@@ -1,4 +1,4 @@
-name: Ultimate Success Build
+name: Final Diagnostic Build
 on: [push, workflow_dispatch]
 jobs:
   build:
@@ -6,30 +6,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Inspect Files
+        run: |
+          echo "Listing all files in the repository:"
+          find . -maxdepth 3 -not -path '*/.*'
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      - name: Auto-Locate and Build
+      - name: Try Build
         run: |
-          # This command finds the exact folder containing pubspec.yaml
-          FLUTTER_PATH=$(find . -name "pubspec.yaml" -exec dirname {} \; | head -n 1)
-          
-          if [ -z "$FLUTTER_PATH" ]; then
-            echo "CRITICAL ERROR: No pubspec.yaml found in the repository. Please verify your files."
+          PROJECT_ROOT=$(find . -name "pubspec.yaml" -exec dirname {} \; | head -n 1)
+          if [ -z "$PROJECT_ROOT" ]; then
+            echo "ERROR: Your repository is missing the pubspec.yaml file."
             exit 1
           fi
-          
-          echo "Found project at: $FLUTTER_PATH"
-          cd "$FLUTTER_PATH"
-          
+          cd "$PROJECT_ROOT"
           flutter pub get
           flutter build apk --release --no-tree-shake-icons
 
-      - name: Upload APK
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: final-app
+          name: my-app
           path: "**/*.apk"
           
