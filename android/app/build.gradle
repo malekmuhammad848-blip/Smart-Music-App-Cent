@@ -16,7 +16,7 @@ apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
-    namespace "com.cent.music"
+    namespace "com.cent.music" 
     compileSdkVersion 34
 
     compileOptions {
