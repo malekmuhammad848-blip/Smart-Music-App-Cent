@@ -1,36 +1,30 @@
-name: Ultimate Success Build
+name: Global Build Search
 on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+      
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      - name: Locate and Build
+      - name: Find and Build
         run: |
-          # Find where the Flutter project is
           PROJECT_ROOT=$(find . -name "pubspec.yaml" -exec dirname {} \; | head -n 1)
-          
           if [ -z "$PROJECT_ROOT" ]; then
-            echo "Error: Could not find your project files. Please ensure you uploaded them."
+            echo "No project files found!"
             exit 1
           fi
-          
-          echo "Building project in: $PROJECT_ROOT"
           cd "$PROJECT_ROOT"
-          
-          # Clean and Build with extra flags to prevent failure
           flutter pub get
-          flutter build apk --release --no-tree-shake-icons --no-sound-null-safety || flutter build apk --release --no-tree-shake-icons
+          flutter build apk --release --no-tree-shake-icons
 
-      - name: Final Artifact Upload
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: my-application
+          name: app-release
           path: "**/*.apk"
           
