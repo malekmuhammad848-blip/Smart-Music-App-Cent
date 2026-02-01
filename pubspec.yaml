@@ -12,11 +12,11 @@ dependencies:
 
   # High Performance Media Handling
   youtube_explode_dart: ^2.2.2
-  youtube_player_flutter: ^9.1.0
+  youtube_player_flutter: ^9.1.1
   flutter_inappwebview: ^6.1.5
   
   # Professional Storage & Caching
-  shared_preferences: ^2.2.3
+  shared_preferences: ^2.3.2
   cached_network_image: ^3.4.1
 
 dev_dependencies:
@@ -26,6 +26,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/images/
-    
+  # assets:
+  #   - assets/images/
+  
