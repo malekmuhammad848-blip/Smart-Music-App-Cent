@@ -11,7 +11,6 @@ import 'dart:ui';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
   final session = await AudioSession.instance;
   await session.configure(const AudioSessionConfiguration.music());
   await session.setActive(true);
@@ -75,33 +74,23 @@ class _MainArchitectureState extends State<MainArchitecture> {
       var manifest = await _yt.videos.streamsClient.getManifest(video.id);
       var audioStream = manifest.audioOnly.withHighestBitrate();
 
-      if (audioStream != null) {
-        await _player.setAudioSource(
-          AudioSource.uri(
-            Uri.parse(audioStream.url.toString()),
-            tag: MediaItem(
-              id: video.id.value,
-              album: video.author,
-              title: video.title,
-              duration: video.duration,
-              artUri: Uri.parse(video.thumbnails.highResUrl),
-            ),
+      await _player.setAudioSource(
+        AudioSource.uri(
+          Uri.parse(audioStream.url.toString()),
+          tag: MediaItem(
+            id: video.id.value,
+            album: video.author,
+            title: video.title,
+            duration: video.duration,
+            artUri: Uri.parse(video.thumbnails.highResUrl),
           ),
-          preload: true,
-        );
-        
-        await _player.play();
-      }
+        ),
+        preload: true,
+      );
+      
+      await _player.play();
     } catch (e) {
-      try {
-        var streamUrl = await _yt.videos.streamsClient.getHttpLiveStreamUrl(video.id);
-        if (streamUrl != null) {
-          await _player.setUrl(streamUrl);
-          await _player.play();
-        }
-      } catch (err) {
-        debugPrint(err.toString());
-      }
+      debugPrint(e.toString());
     } finally {
       if (mounted) setState(() => _isBuffering = false);
     }
