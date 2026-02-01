@@ -10,12 +10,13 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
 
-  # High Performance Media Handling
+  # Media & Engine
   youtube_explode_dart: ^2.2.2
+  just_audio: ^0.9.42
   youtube_player_flutter: ^9.1.1
   flutter_inappwebview: ^6.1.5
   
-  # Professional Storage & Caching
+  # Storage & Caching
   shared_preferences: ^2.3.2
   cached_network_image: ^3.4.1
 
@@ -26,6 +27,4 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  # assets:
-  #   - assets/images/
   
