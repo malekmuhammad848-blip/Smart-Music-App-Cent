@@ -1,186 +1,315 @@
 import 'package:flutter/material.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
-import 'package:youtube_explode_dart/youtube_explode_dart.dart' as exp;
-import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:ui';
 
-void main() => runApp(const CentMusicApp());
+void main() => runApp(const CentMusicElite());
 
-class CentMusicApp extends StatelessWidget {
-  const CentMusicApp({super.key});
+class CentMusicElite extends StatelessWidget {
+  const CentMusicElite({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
+      theme: ThemeData(
+        brightness: Brightness.dark,
         primaryColor: const Color(0xFFD4AF37),
-        scaffoldBackgroundColor: const Color(0xFF0F0F0F),
+        scaffoldBackgroundColor: const Color(0xFF050505),
       ),
-      home: const MainMusicScreen(),
+      home: const MainScaffold(),
     );
   }
 }
 
-class MainMusicScreen extends StatefulWidget {
-  const MainMusicScreen({super.key});
+class MainScaffold extends StatefulWidget {
+  const MainScaffold({super.key});
+
   @override
-  State<MainMusicScreen> createState() => _MainMusicScreenState();
+  State<MainScaffold> createState() => _MainScaffoldState();
 }
 
-class _MainMusicScreenState extends State<MainMusicScreen> with SingleTickerProviderStateMixin {
-  late YoutubePlayerController _controller;
-  final exp.YoutubeExplode yt = exp.YoutubeExplode();
-  late AnimationController _rotationController;
-  
-  List<exp.Video> trendingSongs = [];
-  String? currentTitle, currentArtist, currentCover, currentId;
-  bool isPlaying = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = YoutubePlayerController(
-      initialVideoId: '',
-      flags: const YoutubePlayerFlags(autoPlay: false, hideControls: true, mute: false),
-    )..addListener(_playerListener);
-
-    _rotationController = AnimationController(vsync: this, duration: const Duration(seconds: 20));
-    _fetchTrending();
-  }
-
-  void _playerListener() {
-    if (mounted) {
-      final controllerPlaying = _controller.value.isPlaying;
-      if (controllerPlaying != isPlaying) {
-        setState(() {
-          isPlaying = controllerPlaying;
-          isPlaying ? _rotationController.repeat() : _rotationController.stop();
-        });
-      }
-    }
-  }
-
-  // FIXED: Added 'await' to handle the Future correctly
-  Future<void> _fetchTrending() async {
-    try {
-      final playlistVideos = await yt.playlists.getVideos('PLFgquLnL59alW3ElYiS2t6gBnL8I9Jp7p').toList();
-      setState(() {
-        trendingSongs = playlistVideos.take(15).toList();
-      });
-    } catch (e) {
-      debugPrint("Error: $e");
-    }
-  }
-
-  void _playSong(exp.Video video) {
-    setState(() {
-      currentId = video.id.value;
-      currentTitle = video.title;
-      currentArtist = video.author;
-      currentCover = video.thumbnails.highResUrl;
-    });
-    _controller.load(video.id.value);
-    _controller.play();
-  }
+class _MainScaffoldState extends State<MainScaffold> {
+  final Color gold = const Color(0xFFD4AF37);
+  final Color bgBlack = const Color(0xFF050505);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          _buildBackground(),
-          CustomScrollView(
-            slivers: [
-              const SliverAppBar(
-                expandedHeight: 100,
-                backgroundColor: Colors.transparent,
-                flexibleSpace: FlexibleSpaceBar(
-                  title: Text("CENT MUSIC", style: TextStyle(letterSpacing: 3, fontWeight: FontWeight.bold)),
-                  centerTitle: true,
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment.topLeft,
+                  radius: 1.2,
+                  colors: [gold.withOpacity(0.07), Colors.transparent],
                 ),
               ),
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => _buildMusicTile(trendingSongs[index]),
-                  childCount: trendingSongs.length,
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 120)),
-            ],
+            ),
           ),
-          if (currentId != null) _buildMiniPlayer(),
+          SafeArea(
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                _buildHeader(),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 25),
+                        _buildSectionHeader("Top 10 Legendary", "Weekly Highlights"),
+                        _buildTopTenCarousel(),
+                        const SizedBox(height: 40),
+                        _buildSectionHeader("Recently Played", "Your History"),
+                        _buildRecentGrid(),
+                        const SizedBox(height: 40),
+                        _buildSectionHeader("Premium Categories", "Smart Filters"),
+                        _buildSmartCategories(),
+                        const SizedBox(height: 130),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _buildGlassPlayer(),
+        ],
+      ),
+      bottomNavigationBar: _buildEliteNav(),
+    );
+  }
+
+  Widget _buildHeader() {
+    return SliverAppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      expandedHeight: 70,
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          ShaderMask(
+            shaderCallback: (bounds) => LinearGradient(
+              colors: [gold, const Color(0xFFFBF5B7), gold],
+            ).createShader(bounds),
+            child: const Text("CENT", style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 4, fontSize: 28)),
+          ),
+          _build3DButton(Icons.search, 20),
         ],
       ),
     );
   }
 
-  Widget _buildBackground() => Container(decoration: const BoxDecoration(color: Color(0xFF0F0F0F)));
+  Widget _buildSectionHeader(String title, String subtitle) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(subtitle.toUpperCase(), style: TextStyle(color: gold.withOpacity(0.5), fontSize: 10, letterSpacing: 2, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 5),
+        Text(title, style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800)),
+      ],
+    );
+  }
 
-  Widget _buildMusicTile(exp.Video video) {
+  Widget _buildTopTenCarousel() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: ListTile(
-        onTap: () => _playSong(video),
-        leading: ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: CachedNetworkImage(imageUrl: video.thumbnails.mediumResUrl, width: 50, height: 50, fit: BoxFit.cover),
-        ),
-        title: Text(video.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-        subtitle: Text(video.author, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        // FIXED: Replaced 'null' with an empty function to satisfy the type system
-        trailing: IconButton(icon: const Icon(Icons.play_circle_fill, color: Color(0xFFD4AF37)), onPressed: () => _playSong(video)),
+      height: 240,
+      margin: const EdgeInsets.only(top: 15),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: 10,
+        itemBuilder: (context, index) => _buildEliteCard(index),
       ),
     );
   }
 
-  Widget _buildMiniPlayer() {
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Container(
-        height: 90,
-        margin: const EdgeInsets.all(15),
-        padding: const EdgeInsets.symmetric(horizontal: 15),
+  Widget _buildEliteCard(int index) {
+    return Container(
+      width: 170,
+      margin: const EdgeInsets.only(right: 20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(35),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.white.withOpacity(0.08), Colors.white.withOpacity(0.01)],
+        ),
+        border: Border.all(color: gold.withOpacity(0.2), width: 0.5),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 10)),
+        ],
+      ),
+      child: Column(
+        children: [
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(25),
+                image: const DecorationImage(
+                  image: NetworkImage("https://picsum.photos/400/400"),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
+          Text("Legend ${index + 1}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 4),
+          Text("CENT MUSIC PRO", style: TextStyle(color: gold, fontSize: 10, letterSpacing: 1)),
+          const SizedBox(height: 15),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2, crossAxisSpacing: 15, mainAxisSpacing: 15, childAspectRatio: 2.8),
+      itemCount: 4,
+      itemBuilder: (context, index) => Container(
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 10)],
+          color: const Color(0xFF121212),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          boxShadow: [const BoxShadow(color: Colors.black26, blurRadius: 5, offset: Offset(2, 2))],
         ),
         child: Row(
           children: [
-            RotationTransition(
-              turns: _rotationController,
-              child: CircleAvatar(backgroundImage: CachedNetworkImageProvider(currentCover!), radius: 25),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network("https://picsum.photos/100", width: 50, height: 50, fit: BoxFit.cover),
             ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(currentTitle!, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Text(currentArtist!, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-                ],
-              ),
-            ),
-            IconButton(
-              icon: Icon(isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled, size: 40, color: const Color(0xFFD4AF37)),
-              onPressed: () => isPlaying ? _controller.pause() : _controller.play(),
-            ),
+            const SizedBox(width: 12),
+            const Expanded(child: Text("Track Echo", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
           ],
         ),
       ),
     );
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    _rotationController.dispose();
-    yt.close();
-    super.dispose();
+  Widget _buildSmartCategories() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _buildCategoryCircle(Icons.favorite_rounded, "Liked"),
+        _buildCategoryCircle(Icons.playlist_play_rounded, "Playlists"),
+        _buildCategoryCircle(Icons.bolt_rounded, "Energy"),
+        _buildCategoryCircle(Icons.folder_special_rounded, "Vault"),
+      ],
+    );
+  }
+
+  Widget _buildCategoryCircle(IconData icon, String label) {
+    return Column(
+      children: [
+        Container(
+          width: 65, height: 65,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: bgBlack,
+            border: Border.all(color: gold.withOpacity(0.4)),
+            boxShadow: [
+              BoxShadow(color: gold.withOpacity(0.1), blurRadius: 10, spreadRadius: 1),
+              BoxShadow(color: Colors.white.withOpacity(0.05), offset: const Offset(-3, -3), blurRadius: 5),
+            ],
+          ),
+          child: Icon(icon, color: gold, size: 28),
+        ),
+        const SizedBox(height: 10),
+        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 11, fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+
+  Widget _buildGlassPlayer() {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Container(
+        height: 75,
+        margin: const EdgeInsets.only(bottom: 110, left: 15, right: 15),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: gold.withOpacity(0.3), width: 1),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 20)],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              color: Colors.black.withOpacity(0.6),
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              child: Row(
+                children: [
+                  const CircleAvatar(radius: 25, backgroundImage: NetworkImage("https://picsum.photos/200")),
+                  const SizedBox(width: 15),
+                  const Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Vibrant Resonance", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        Text("Spatial Audio • HQ", style: TextStyle(color: Colors.grey, fontSize: 11)),
+                      ],
+                    ),
+                  ),
+                  _build3DButton(Icons.skip_previous_rounded, 18),
+                  const SizedBox(width: 5),
+                  Icon(Icons.play_circle_filled_rounded, color: gold, size: 48),
+                  const SizedBox(width: 5),
+                  _build3DButton(Icons.skip_next_rounded, 18),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _build3DButton(IconData icon, double size) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: bgBlack,
+        boxShadow: [
+          BoxShadow(color: Colors.white.withOpacity(0.1), offset: const Offset(-2, -2), blurRadius: 4),
+          BoxShadow(color: Colors.black, offset: const Offset(2, 2), blurRadius: 4),
+        ],
+      ),
+      child: Icon(icon, color: gold, size: size),
+    );
+  }
+
+  Widget _buildEliteNav() {
+    return Container(
+      height: 95,
+      decoration: BoxDecoration(
+        color: bgBlack,
+        border: Border(top: BorderSide(color: gold.withOpacity(0.15), width: 0.5)),
+      ),
+      child: BottomNavigationBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        selectedItemColor: gold,
+        unselectedItemColor: Colors.grey.shade700,
+        selectedFontSize: 12,
+        unselectedFontSize: 12,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.grid_view_rounded, size: 28), label: "Studio"),
+          BottomNavigationBarItem(icon: Icon(Icons.explore_outlined, size: 28), label: "Discover"),
+          BottomNavigationBarItem(icon: Icon(Icons.favorite_outline_rounded, size: 28), label: "Library"),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline_rounded, size: 28), label: "Profile"),
+        ],
+      ),
+    );
   }
 }
