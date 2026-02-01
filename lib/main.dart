@@ -70,29 +70,33 @@ class _MainArchitectureState extends State<MainArchitecture> {
       await _player.stop();
       await _player.setVolume(1.0);
 
-      final manifest = await _yt.videos.streamsClient.getManifest(video.id);
-      final audioStream = manifest.audioOnly.withHighestBitrate();
+      var manifest = await _yt.videos.streamsClient.getManifest(video.id);
+      var audioStream = manifest.audioOnly.withHighestBitrate();
 
-      if (audioStream != null) {
-        await _player.setAudioSource(
-          AudioSource.uri(
-            Uri.parse(audioStream.url.toString()),
-            tag: MediaItem(
-              id: video.id.value,
-              album: video.author,
-              title: video.title,
-              artUri: Uri.parse(video.thumbnails.highResUrl),
-            ),
+      await _player.setAudioSource(
+        AudioSource.uri(
+          Uri.parse(audioStream.url.toString()),
+          tag: MediaItem(
+            id: video.id.value,
+            album: video.author,
+            title: video.title,
+            artUri: Uri.parse(video.thumbnails.highResUrl),
           ),
-          preload: true,
-        );
-        _player.play();
-      }
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Referer': 'https://www.youtube.com/',
+          },
+        ),
+      );
+      
+      _player.play();
     } catch (e) {
       try {
-        var track = await _yt.videos.streamsClient.getHttpLiveStreamUrl(video.id);
-        if (track != null) {
-          await _player.setUrl(track);
+        var streamUrl = await _yt.videos.streamsClient.getHttpLiveStreamUrl(video.id);
+        if (streamUrl != null) {
+          await _player.setUrl(streamUrl, headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          });
           _player.play();
         }
       } catch (err) {
@@ -431,4 +435,3 @@ class EngineLayer extends StatelessWidget {
     );
   }
 }
-
