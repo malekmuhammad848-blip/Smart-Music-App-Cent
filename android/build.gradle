@@ -1,20 +1,19 @@
 buildscript {
-    // Highly Professional Version Management
+    // Centralized Version Management
     ext.kotlin_version = '1.9.22'
     
     repositories {
         google()
         mavenCentral()
-        // Added JCenter as a fallback for older plugins if needed
         maven { url "https://plugins.gradle.org/m2/" }
     }
 
     dependencies {
-        // Updated to a highly stable version compatible with API 34
+        // Advanced Gradle 8.2.1 for API 34 Compatibility
         classpath 'com.android.tools.build:gradle:8.2.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         
-        // Essential for Google Services and Crash Analysis
+        // Essential for Cloud Services & Performance Monitoring
         classpath 'com.google.gms:google-services:4.4.1'
         classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.9'
     }
@@ -24,23 +23,40 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        // Optimization: Standard Flutter artifacts storage
+        // Critical for GitHub Actions to find Flutter dependencies
         maven { url 'https://storage.googleapis.com/download.flutter.io' }
     }
 }
 
-// Professional Build Directory Management
+/**
+ * Dynamic Build Directory Management
+ * Optimizing for GitHub Runners and local environments
+ */
 rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
 
-// Critical: Ensure ':app' is evaluated first to avoid dependency errors
+/**
+ * Dependency Evaluation Order
+ * Ensures the core app is analyzed before any plugins (Essential for Flutter)
+ */
 subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            project.android {
+                if (namespace == null) {
+                    namespace project.group
+                }
+            }
+        }
+    }
     project.evaluationDependsOn(':app')
 }
 
-// Clean Task with updated Gradle 8+ Syntax
+/**
+ * Modern Clean Task for Gradle 8.0+
+ */
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
