@@ -11,8 +11,10 @@ import 'dart:ui';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
   final session = await AudioSession.instance;
   await session.configure(const AudioSessionConfiguration.music());
+  await session.setActive(true);
   
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -68,6 +70,8 @@ class _MainArchitectureState extends State<MainArchitecture> {
 
     try {
       await _player.stop();
+      await _player.setVolume(1.0);
+      
       var manifest = await _yt.videos.streamsClient.getManifest(video.id);
       var audioStream = manifest.audioOnly.withHighestBitrate();
 
@@ -85,14 +89,15 @@ class _MainArchitectureState extends State<MainArchitecture> {
           ),
           preload: true,
         );
-        _player.play();
+        
+        await _player.play();
       }
     } catch (e) {
       try {
         var streamUrl = await _yt.videos.streamsClient.getHttpLiveStreamUrl(video.id);
         if (streamUrl != null) {
           await _player.setUrl(streamUrl);
-          _player.play();
+          await _player.play();
         }
       } catch (err) {
         debugPrint(err.toString());
@@ -359,15 +364,12 @@ class PlayerScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    IconButton(icon: const Icon(Icons.skip_previous_rounded, size: 50), onPressed: () {}),
+                    const Icon(Icons.skip_previous_rounded, size: 50),
                     const SizedBox(width: 30),
                     StreamBuilder<PlayerState>(
                       stream: player.playerStateStream,
                       builder: (context, snap) {
                         bool p = snap.data?.playing ?? false;
-                        if (snap.data?.processingState == ProcessingState.buffering) {
-                          return const SpinKitRing(color: Color(0xFFD4AF37), size: 50);
-                        }
                         return GestureDetector(
                           onTap: () => p ? player.pause() : player.play(),
                           child: Container(
@@ -379,7 +381,7 @@ class PlayerScreen extends StatelessWidget {
                       },
                     ),
                     const SizedBox(width: 30),
-                    IconButton(icon: const Icon(Icons.skip_next_rounded, size: 50), onPressed: () {}),
+                    const Icon(Icons.skip_next_rounded, size: 50),
                   ],
                 ),
                 const Spacer(flex: 2),
