@@ -10,13 +10,14 @@ void main() {
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       systemNavigationBarColor: Colors.black,
+      statusBarIconTheme: Brightness.light,
     ),
   );
-  runApp(const CentUltimateElite());
+  runApp(const CentGlobalApp());
 }
 
-class CentUltimateElite extends StatelessWidget {
-  const CentUltimateElite({super.key});
+class CentGlobalApp extends StatelessWidget {
+  const CentGlobalApp({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -26,59 +27,60 @@ class CentUltimateElite extends StatelessWidget {
         primaryColor: const Color(0xFFD4AF37),
         scaffoldBackgroundColor: const Color(0xFF000000),
       ),
-      home: const MainRootNavigator(),
+      home: const ApplicationUniverse(),
     );
   }
 }
 
-class MainRootNavigator extends StatefulWidget {
-  const MainRootNavigator({super.key});
+class ApplicationUniverse extends StatefulWidget {
+  const ApplicationUniverse({super.key});
   @override
-  State<MainRootNavigator> createState() => _MainRootNavigatorState();
+  State<ApplicationUniverse> createState() => _ApplicationUniverseState();
 }
 
-class _MainRootNavigatorState extends State<MainRootNavigator> {
-  int _currentIndex = 0;
+class _ApplicationUniverseState extends State<ApplicationUniverse> {
+  int _activeTab = 0;
   final AudioPlayer _audioEngine = AudioPlayer();
   final YoutubeExplode _ytEngine = YoutubeExplode();
   
-  Video? _activeTrack;
-  bool _isBuffering = false;
-  final List<Video> _favList = [];
+  Video? _selectedTrack;
+  bool _isEngineLoading = false;
+  final List<Video> _smartLibrary = [];
+  final List<Video> _history = [];
 
-  // --- THE CRITICAL AUDIO FIX ---
-  Future<void> _startPlayback(Video video) async {
+  // --- SUPREME AUDIO FLOW CONTROL ---
+  Future<void> _launchAudioStream(Video video) async {
+    if (_selectedTrack?.id == video.id && _audioEngine.playing) return;
+    
     setState(() {
-      _activeTrack = video;
-      _isBuffering = true;
+      _selectedTrack = video;
+      _isEngineLoading = true;
+      if (!_history.contains(video)) _history.insert(0, video);
     });
+
     try {
       var manifest = await _ytEngine.videos.streamsClient.getManifest(video.id);
       var streamInfo = manifest.audioOnly.withHighestBitrate();
       
-      // Force User-Agent and headers to prevent "No Sound" issue
       await _audioEngine.setAudioSource(
         AudioSource.uri(
           Uri.parse(streamInfo.url.toString()),
           tag: video.title,
         ),
       );
+      
       _audioEngine.play();
-      setState(() => _isBuffering = false);
+      setState(() => _isEngineLoading = false);
     } catch (e) {
-      setState(() => _isBuffering = false);
-      debugPrint("Audio Engine Failure: $e");
+      setState(() => _isEngineLoading = false);
+      _triggerAlert("Network instability detected. Optimizing stream...");
     }
   }
 
-  void _handleFav(Video v) {
-    setState(() {
-      if (_favList.any((e) => e.id == v.id)) {
-        _favList.removeWhere((e) => e.id == v.id);
-      } else {
-        _favList.add(v);
-      }
-    });
+  void _triggerAlert(String m) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(m), backgroundColor: const Color(0xFFD4AF37).withOpacity(0.8)),
+    );
   }
 
   @override
@@ -90,109 +92,95 @@ class _MainRootNavigatorState extends State<MainRootNavigator> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> _appScreens = [
-      DiscoverUI(onPlay: _startPlayback, yt: _ytEngine),
-      LibraryUI(favs: _favList, onPlay: _startPlayback),
-      const SettingsUI(),
+    final List<Widget> _galaxyPages = [
+      DiscoveryGalaxy(onPlay: _launchAudioStream, yt: _ytEngine),
+      SmartLibraryGalaxy(favs: _smartLibrary, history: _history, onPlay: _launchAudioStream),
+      const EngineGalaxy(),
     ];
 
     return Scaffold(
       body: Stack(
         children: [
-          IndexedStack(index: _currentIndex, children: _appScreens),
-          if (_activeTrack != null) _buildUltraMiniPlayer(),
+          IndexedStack(index: _activeTab, children: _galaxyPages),
+          if (_selectedTrack != null) _buildUniversalMiniPlayer(),
         ],
       ),
-      bottomNavigationBar: _buildModernNavbar(),
+      bottomNavigationBar: _buildModernSystemNav(),
     );
   }
 
-  Widget _buildModernNavbar() {
+  Widget _buildModernSystemNav() {
     return Container(
-      height: 85,
-      padding: const EdgeInsets.only(top: 10),
-      decoration: BoxDecoration(
+      height: 95,
+      decoration: const BoxDecoration(
         color: Colors.black,
-        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
+        border: Border(top: BorderSide(color: Colors.white10, width: 0.5)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _navIcon(Icons.explore_outlined, Icons.explore, 0),
-          _navIcon(Icons.favorite_outline, Icons.favorite, 1),
-          _navIcon(Icons.settings_outlined, Icons.settings, 2),
+          _navCore(Icons.bubble_chart_outlined, 0),
+          _navCore(Icons.auto_awesome_motion_rounded, 1),
+          _navCore(Icons.vibration_rounded, 2),
         ],
       ),
     );
   }
 
-  Widget _navIcon(IconData normal, IconData active, int idx) {
-    bool isSelected = _currentIndex == idx;
+  Widget _navCore(IconData icon, int i) {
+    bool active = _activeTab == i;
     return GestureDetector(
-      onTap: () => setState(() => _currentIndex = idx),
-      child: AnimatedContainer(
+      onTap: () => setState(() => _activeTab = i),
+      child: AnimatedScale(
+        scale: active ? 1.2 : 1.0,
         duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFD4AF37).withOpacity(0.05) : Colors.transparent,
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Icon(isSelected ? active : normal, color: isSelected ? const Color(0xFFD4AF37) : Colors.white24, size: 28),
+        child: Icon(icon, color: active ? const Color(0xFFD4AF37) : Colors.white24, size: 30),
       ),
     );
   }
 
-  Widget _buildUltraMiniPlayer() {
+  Widget _buildUniversalMiniPlayer() {
     return Positioned(
-      bottom: 25, left: 15, right: 15,
+      bottom: 20, left: 10, right: 10,
       child: GestureDetector(
-        onTap: _launchFullVisualizer,
+        onTap: _openVisualSpace,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(30),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 45, sigmaY: 45),
+            filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
             child: Container(
-              height: 75,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              height: 85,
+              padding: const EdgeInsets.symmetric(horizontal: 15),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.06),
-                border: Border.all(color: Colors.white.withOpacity(0.08)),
+                color: Colors.white.withOpacity(0.08),
+                border: Border.all(color: Colors.white.withOpacity(0.1)),
               ),
               child: Row(
                 children: [
-                  Hero(
-                    tag: 'track_art',
-                    child: Container(
-                      width: 52, height: 52,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        image: DecorationImage(image: NetworkImage(_activeTrack!.thumbnails.lowResUrl), fit: BoxFit.cover),
-                      ),
-                    ),
-                  ),
+                  _isEngineLoading 
+                    ? const CircularProgressIndicator(color: Color(0xFFD4AF37))
+                    : CircleAvatar(backgroundImage: NetworkImage(_selectedTrack!.thumbnails.mediumResUrl), radius: 28),
                   const SizedBox(width: 15),
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_activeTrack!.title, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.2)),
-                        Text(_activeTrack!.author, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold)),
+                        Text(_selectedTrack!.title, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                        const Text("MASTER QUALITY • 320KBPS", style: TextStyle(color: Color(0xFFD4AF37), fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1)),
                       ],
                     ),
                   ),
-                  _isBuffering 
-                    ? const SizedBox(width: 25, height: 25, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFD4AF37)))
-                    : StreamBuilder<PlayerState>(
-                        stream: _audioEngine.playerStateStream,
-                        builder: (context, snap) {
-                          bool isPlaying = snap.data?.playing ?? false;
-                          return IconButton(
-                            icon: Icon(isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded, color: const Color(0xFFD4AF37), size: 45),
-                            onPressed: () => isPlaying ? _audioEngine.pause() : _audioEngine.play(),
-                          );
-                        }
-                      ),
+                  StreamBuilder<PlayerState>(
+                    stream: _audioEngine.playerStateStream,
+                    builder: (context, snap) {
+                      bool p = snap.data?.playing ?? false;
+                      return IconButton(
+                        icon: Icon(p ? Icons.pause_circle_filled : Icons.play_circle_filled, color: const Color(0xFFD4AF37), size: 50),
+                        onPressed: () => p ? _audioEngine.pause() : _audioEngine.play(),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -202,51 +190,58 @@ class _MainRootNavigatorState extends State<MainRootNavigator> {
     );
   }
 
-  void _launchFullVisualizer() {
+  void _openVisualSpace() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => FullVisualizerUI(
+      builder: (context) => VisualSpaceUI(
         player: _audioEngine, 
-        video: _activeTrack!,
-        isFavorite: _favList.any((v) => v.id == _activeTrack!.id),
-        toggleFav: () => _handleFav(_activeTrack!),
+        video: _selectedTrack!,
+        onFavToggle: () {
+          setState(() {
+            if (_smartLibrary.contains(_selectedTrack)) {
+              _smartLibrary.remove(_selectedTrack);
+            } else {
+              _smartLibrary.add(_selectedTrack!);
+            }
+          });
+        },
+        isFav: _smartLibrary.contains(_selectedTrack),
       ),
     );
   }
 }
 
-// --- DISCOVER UI ---
-class DiscoverUI extends StatefulWidget {
+// --- DISCOVERY GALAXY ---
+class DiscoveryGalaxy extends StatefulWidget {
   final Function(Video) onPlay;
   final YoutubeExplode yt;
-  const DiscoverUI({super.key, required this.onPlay, required this.yt});
+  const DiscoveryGalaxy({super.key, required this.onPlay, required this.yt});
   @override
-  State<DiscoverUI> createState() => _DiscoverUIState();
+  State<DiscoveryGalaxy> createState() => _DiscoveryGalaxyState();
 }
 
-class _DiscoverUIState extends State<DiscoverUI> {
-  final TextEditingController _searchCtrl = TextEditingController();
-  List<Video> _searchResults = [];
-  bool _isSearching = false;
+class _DiscoveryGalaxyState extends State<DiscoveryGalaxy> {
+  final TextEditingController _controller = TextEditingController();
+  List<Video> _streamResults = [];
+  bool _searching = false;
 
-  void _performSearch(String query) async {
-    setState(() => _isSearching = true);
-    var results = await widget.yt.search.search(query);
+  void _searchInternal(String val) async {
+    setState(() => _searching = true);
+    var search = await widget.yt.search.search(val);
     setState(() {
-      _searchResults = results.toList();
-      _isSearching = false;
+      _streamResults = search.toList();
+      _searching = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return CustomScrollView(
-      physics: const BouncingScrollPhysics(),
       slivers: [
         SliverAppBar(
-          expandedHeight: 180,
+          expandedHeight: 220,
           backgroundColor: Colors.black,
           flexibleSpace: FlexibleSpaceBar(
             centerTitle: true,
@@ -254,51 +249,40 @@ class _DiscoverUIState extends State<DiscoverUI> {
               "CENT",
               style: TextStyle(
                 color: const Color(0xFFD4AF37),
-                letterSpacing: 35, // ULTRA MODERN SPACING
+                letterSpacing: 45,
                 fontWeight: FontWeight.w100,
-                fontSize: 26,
-                shadows: [
-                  Shadow(color: const Color(0xFFD4AF37).withOpacity(0.5), blurRadius: 25),
-                  Shadow(color: const Color(0xFFD4AF37).withOpacity(0.2), blurRadius: 50),
-                ],
+                fontSize: 30,
+                shadows: [Shadow(color: const Color(0xFFD4AF37).withOpacity(0.5), blurRadius: 40)],
               ),
             ),
           ),
         ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: TextField(
-                  controller: _searchCtrl,
-                  onSubmitted: _performSearch,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.white.withOpacity(0.04),
-                    hintText: "Enter the soundscape...",
-                    hintStyle: const TextStyle(color: Colors.white12),
-                    prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFFD4AF37)),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.all(20),
-                  ),
-                ),
+            padding: const EdgeInsets.all(30),
+            child: TextField(
+              controller: _controller,
+              onSubmitted: _searchInternal,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.05),
+                hintText: "Summon the sound...",
+                prefixIcon: const Icon(Icons.blur_on_rounded, color: Color(0xFFD4AF37)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(40), borderSide: BorderSide.none),
               ),
             ),
           ),
         ),
-        if (_isSearching) const SliverToBoxAdapter(child: LinearProgressIndicator(color: Color(0xFFD4AF37))),
+        if (_searching) const SliverToBoxAdapter(child: LinearProgressIndicator(color: Color(0xFFD4AF37))),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 150),
           sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2, childAspectRatio: 0.72, mainAxisSpacing: 25, crossAxisSpacing: 20,
+              crossAxisCount: 2, childAspectRatio: 0.75, mainAxisSpacing: 30, crossAxisSpacing: 20,
             ),
             delegate: SliverChildBuilderDelegate(
-              (context, i) => _buildTrackTile(_searchResults[i]),
-              childCount: _searchResults.length,
+              (context, i) => _itemCard(_streamResults[i]),
+              childCount: _streamResults.length,
             ),
           ),
         ),
@@ -306,7 +290,7 @@ class _DiscoverUIState extends State<DiscoverUI> {
     );
   }
 
-  Widget _buildTrackTile(Video v) {
+  Widget _itemCard(Video v) {
     return GestureDetector(
       onTap: () => widget.onPlay(v),
       child: Column(
@@ -315,197 +299,176 @@ class _DiscoverUIState extends State<DiscoverUI> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(35), // SMOOTHER CORNERS
+                borderRadius: BorderRadius.circular(45),
                 image: DecorationImage(image: NetworkImage(v.thumbnails.highResUrl), fit: BoxFit.cover),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 15, offset: const Offset(0, 8))],
               ),
             ),
           ),
           const SizedBox(height: 12),
-          Text(v.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-          Text(v.author, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 11, fontWeight: FontWeight.bold)),
+          Text(v.title, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          Text(v.author, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 10, letterSpacing: 2)),
         ],
       ),
     );
   }
 }
 
-// --- FULL VISUALIZER UI ---
-class FullVisualizerUI extends StatelessWidget {
+// --- VISUAL SPACE UI (The Visualizer) ---
+class VisualSpaceUI extends StatelessWidget {
   final AudioPlayer player;
   final Video video;
-  final bool isFavorite;
-  final VoidCallback toggleFav;
-  const FullVisualizerUI({super.key, required this.player, required this.video, required this.isFavorite, required this.toggleFav});
+  final VoidCallback onFavToggle;
+  final bool isFav;
+  const VisualSpaceUI({super.key, required this.player, required this.video, required this.onFavToggle, required this.isFav});
 
   @override
   Widget build(BuildContext context) {
     const gold = Color(0xFFD4AF37);
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
+    return Container(
+      height: MediaQuery.of(context).size.height,
+      decoration: const BoxDecoration(color: Colors.black),
+      child: Stack(
         children: [
-          Positioned.fill(child: Opacity(opacity: 0.25, child: Image.network(video.thumbnails.highResUrl, fit: BoxFit.cover))),
-          BackdropFilter(filter: ImageFilter.blur(sigmaX: 100, sigmaY: 100), child: Container(color: Colors.black.withOpacity(0.75))),
-          SafeArea(
-            child: Column(
-              children: [
-                const SizedBox(height: 15),
-                _playerHeader(context),
-                const Spacer(),
-                _playerArt(),
-                const Spacer(),
-                _playerMeta(),
-                _playerProgress(gold),
-                _playerControls(gold),
-                const Spacer(flex: 2),
-              ],
-            ),
+          Positioned.fill(child: Opacity(opacity: 0.3, child: Image.network(video.thumbnails.highResUrl, fit: BoxFit.cover))),
+          BackdropFilter(filter: ImageFilter.blur(sigmaX: 100, sigmaY: 100), child: Container(color: Colors.black.withOpacity(0.8))),
+          Column(
+            children: [
+              const SizedBox(height: 60),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 25),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(icon: const Icon(Icons.keyboard_arrow_down, size: 45), onPressed: () => Navigator.pop(context)),
+                    const Text("CENT SUPREME PROTOCOL", style: TextStyle(letterSpacing: 4, fontSize: 10, fontWeight: FontWeight.w900)),
+                    IconButton(icon: Icon(isFav ? Icons.favorite : Icons.favorite_border, color: gold, size: 30), onPressed: onFavToggle),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              Container(
+                width: 320, height: 320,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(60),
+                  boxShadow: [BoxShadow(color: gold.withOpacity(0.2), blurRadius: 100)],
+                  image: DecorationImage(image: NetworkImage(video.thumbnails.highResUrl), fit: BoxFit.cover),
+                ),
+              ),
+              const Spacer(),
+              Text(video.title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+              Text(video.author.toUpperCase(), style: const TextStyle(color: gold, letterSpacing: 5, fontSize: 12, fontWeight: FontWeight.bold)),
+              const Spacer(),
+              _streamSlider(player, gold),
+              _controls(player, gold),
+              const Spacer(flex: 2),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _playerHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(icon: const Icon(Icons.expand_more_rounded, size: 45), onPressed: () => Navigator.pop(context)),
-          const Text("CENT SUPREME AUDIO", style: TextStyle(letterSpacing: 6, fontSize: 10, fontWeight: FontWeight.w900)),
-          IconButton(icon: Icon(isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded, color: const Color(0xFFD4AF37), size: 30), onPressed: toggleFav),
-        ],
-      ),
-    );
-  }
-
-  Widget _playerArt() {
-    return Hero(
-      tag: 'track_art',
-      child: Container(
-        width: 320, height: 320,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(40),
-          boxShadow: [
-            BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.3), blurRadius: 80, spreadRadius: 2),
-          ],
-          image: DecorationImage(image: NetworkImage(video.thumbnails.highResUrl), fit: BoxFit.cover),
-        ),
-      ),
-    );
-  }
-
-  Widget _playerMeta() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 45),
-      child: Column(
-        children: [
-          Text(video.title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
-          const SizedBox(height: 12),
-          Text(video.author.toUpperCase(), style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 14, letterSpacing: 3, fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
-
-  Widget _playerProgress(Color g) {
+  Widget _streamSlider(AudioPlayer p, Color g) {
     return StreamBuilder<Duration>(
-      stream: player.positionStream,
+      stream: p.positionStream,
       builder: (context, snap) {
         final pos = snap.data ?? Duration.zero;
-        final dur = player.duration ?? Duration.zero;
+        final dur = p.duration ?? Duration.zero;
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 30),
-          child: Column(
-            children: [
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(trackHeight: 2, thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6)),
-                child: Slider(
-                  activeColor: g, inactiveColor: Colors.white10,
-                  value: pos.inSeconds.toDouble(),
-                  max: dur.inSeconds.toDouble() > 0 ? dur.inSeconds.toDouble() : 1.0,
-                  onChanged: (v) => player.seek(Duration(seconds: v.toInt())),
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(_formatDur(pos), style: const TextStyle(color: Colors.white24, fontSize: 11, fontWeight: FontWeight.bold)),
-                  Text(_formatDur(dur), style: const TextStyle(color: Colors.white24, fontSize: 11, fontWeight: FontWeight.bold)),
-                ],
-              )
-            ],
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Slider(
+            activeColor: g, inactiveColor: Colors.white10,
+            value: pos.inSeconds.toDouble(),
+            max: dur.inSeconds.toDouble() > 0 ? dur.inSeconds.toDouble() : 1.0,
+            onChanged: (v) => p.seek(Duration(seconds: v.toInt())),
           ),
         );
       },
     );
   }
 
-  Widget _playerControls(Color g) {
+  Widget _controls(AudioPlayer p, Color g) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.shuffle_rounded, color: Colors.white10, size: 25),
-        const SizedBox(width: 25),
-        const Icon(Icons.skip_previous_rounded, size: 55),
+        const Icon(Icons.skip_previous_rounded, size: 60),
         const SizedBox(width: 20),
         StreamBuilder<PlayerState>(
-          stream: player.playerStateStream,
+          stream: p.playerStateStream,
           builder: (context, snap) {
-            bool isP = snap.data?.playing ?? false;
+            bool playing = snap.data?.playing ?? false;
             return GestureDetector(
-              onTap: () => isP ? player.pause() : player.play(),
+              onTap: () => playing ? p.pause() : p.play(),
               child: Container(
                 width: 90, height: 90,
-                decoration: BoxDecoration(color: g, shape: BoxShape.circle, boxShadow: [BoxShadow(color: g.withOpacity(0.4), blurRadius: 30)]),
-                child: Icon(isP ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.black, size: 55),
+                decoration: BoxDecoration(color: g, shape: BoxShape.circle, boxShadow: [BoxShadow(color: g.withOpacity(0.4), blurRadius: 40)]),
+                child: Icon(playing ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.black, size: 60),
               ),
             );
           },
         ),
         const SizedBox(width: 20),
-        const Icon(Icons.skip_next_rounded, size: 55),
-        const SizedBox(width: 25),
-        const Icon(Icons.repeat_rounded, color: Colors.white10, size: 25),
+        const Icon(Icons.skip_next_rounded, size: 60),
       ],
     );
   }
-
-  String _formatDur(Duration d) => "${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}";
 }
 
-// --- LIBRARY UI ---
-class LibraryUI extends StatelessWidget {
+// --- SMART LIBRARY GALAXY ---
+class SmartLibraryGalaxy extends StatelessWidget {
   final List<Video> favs;
+  final List<Video> history;
   final Function(Video) onPlay;
-  const LibraryUI({super.key, required this.favs, required this.onPlay});
+  const SmartLibraryGalaxy({super.key, required this.favs, required this.history, required this.onPlay});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(title: const Text("FAVORITES", style: TextStyle(letterSpacing: 8, fontWeight: FontWeight.w100)), centerTitle: true, backgroundColor: Colors.black),
-      body: favs.isEmpty 
-        ? const Center(child: Text("NO ELITE TRACKS SAVED", style: TextStyle(color: Colors.white10, letterSpacing: 2)))
-        : ListView.builder(
-            padding: const EdgeInsets.all(15),
-            itemCount: favs.length,
-            itemBuilder: (context, i) => ListTile(
-              contentPadding: const EdgeInsets.symmetric(vertical: 10),
-              leading: ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.network(favs[i].thumbnails.lowResUrl)),
-              title: Text(favs[i].title, style: const TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text(favs[i].author, style: const TextStyle(color: Color(0xFFD4AF37))),
-              onTap: () => onPlay(favs[i]),
-            ),
-          ),
+      body: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        children: [
+          const SizedBox(height: 80),
+          const Text("NEURAL PLAYLISTS", style: TextStyle(letterSpacing: 5, fontWeight: FontWeight.w100, fontSize: 24)),
+          const SizedBox(height: 30),
+          _smartCard("SMART EVOLUTION", Icons.auto_awesome),
+          _smartCard("GLOBAL TOP 50", Icons.public),
+          const SizedBox(height: 40),
+          const Text("HISTORY", style: TextStyle(letterSpacing: 10, fontSize: 12, color: Color(0xFFD4AF37))),
+          ...history.map((v) => ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.network(v.thumbnails.lowResUrl)),
+            title: Text(v.title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            onTap: () => onPlay(v),
+          )),
+        ],
+      ),
+    );
+  }
+
+  Widget _smartCard(String t, IconData i) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.all(25),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(t, style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 2)),
+          Icon(i, color: const Color(0xFFD4AF37)),
+        ],
+      ),
     );
   }
 }
 
-// --- SETTINGS UI ---
-class SettingsUI extends StatelessWidget {
-  const SettingsUI({super.key});
+// --- ENGINE GALAXY ---
+class EngineGalaxy extends StatelessWidget {
+  const EngineGalaxy({super.key});
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
@@ -514,11 +477,10 @@ class SettingsUI extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text("CENT ENGINE", style: TextStyle(letterSpacing: 10, fontSize: 20, fontWeight: FontWeight.w100)),
+            Icon(Icons.vibration_rounded, color: Color(0xFFD4AF37), size: 100),
             SizedBox(height: 20),
-            Text("ULTRA FIDELITY AUDIO: ACTIVE", style: TextStyle(color: Color(0xFFD4AF37), fontSize: 10, fontWeight: FontWeight.bold)),
-            SizedBox(height: 5),
-            Text("VERSION: 1.0.0 (STABLE MASTER)", style: TextStyle(color: Colors.white10, fontSize: 9)),
+            Text("CENT GLOBAL CORE", style: TextStyle(letterSpacing: 20, fontWeight: FontWeight.w100)),
+            Text("ACTIVE STATUS: UNIVERSAL", style: TextStyle(color: Colors.white24, fontSize: 10)),
           ],
         ),
       ),
