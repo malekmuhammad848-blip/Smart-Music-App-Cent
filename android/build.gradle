@@ -1,5 +1,4 @@
 buildscript {
-    // Centralized Version Management
     ext.kotlin_version = '1.9.22'
     
     repositories {
@@ -9,11 +8,8 @@ buildscript {
     }
 
     dependencies {
-        // Advanced Gradle 8.2.1 for API 34 Compatibility
         classpath 'com.android.tools.build:gradle:8.2.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        
-        // Essential for Cloud Services & Performance Monitoring
         classpath 'com.google.gms:google-services:4.4.1'
         classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.9'
     }
@@ -23,40 +19,19 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        // Critical for GitHub Actions to find Flutter dependencies
         maven { url 'https://storage.googleapis.com/download.flutter.io' }
     }
 }
 
-/**
- * Dynamic Build Directory Management
- * Optimizing for GitHub Runners and local environments
- */
 rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
 
-/**
- * Dependency Evaluation Order
- * Ensures the core app is analyzed before any plugins (Essential for Flutter)
- */
 subprojects {
-    afterEvaluate { project ->
-        if (project.hasProperty('android')) {
-            project.android {
-                if (namespace == null) {
-                    namespace project.group
-                }
-            }
-        }
-    }
     project.evaluationDependsOn(':app')
 }
 
-/**
- * Modern Clean Task for Gradle 8.0+
- */
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
