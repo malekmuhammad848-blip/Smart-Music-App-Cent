@@ -49,8 +49,11 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.debug
-            minifyEnabled true
-            shrinkResources true
+            
+            // Fixed R8 Shrinking issues
+            minifyEnabled false
+            shrinkResources false
+            
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
