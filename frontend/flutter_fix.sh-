@@ -1,0 +1,37 @@
+#!/bin/bash
+set -e
+
+echo "🚀 Fixing Flutter build issues..."
+
+cd frontend
+
+echo "1. Cleaning build..."
+flutter clean
+rm -rf android/build android/app/build
+
+echo "2. Updating dependencies..."
+flutter pub upgrade --major-versions
+flutter pub get
+
+echo "3. Generating local.properties..."
+if [ -z "$FLUTTER_HOME" ]; then
+    FLUTTER_HOME=$(which flutter | xargs dirname | xargs dirname)
+fi
+
+cat > android/local.properties << EOL
+sdk.dir=\$ANDROID_HOME
+flutter.sdk=\$FLUTTER_HOME
+flutter.versionName=1.0.0
+flutter.versionCode=1
+EOL
+
+echo "4. Running build runner..."
+flutter pub run build_runner build --delete-conflicting-outputs
+
+echo "5. Verifying Android build..."
+cd android
+chmod +x gradlew
+./gradlew clean
+cd ..
+
+echo "✅ All fixes applied!"
