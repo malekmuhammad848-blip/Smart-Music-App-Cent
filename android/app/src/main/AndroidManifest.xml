@@ -12,7 +12,7 @@
     <application
         android:name="${applicationName}"
         android:label="CENT Music"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@android:drawable/sym_def_app_icon"
         android:allowBackup="true"
         android:theme="@style/LaunchTheme"
         android:requestLegacyExternalStorage="true"
@@ -54,7 +54,9 @@
             android:name="com.ryanheise.audioservice.AudioService"
             android:foregroundServiceType="mediaPlayback"
             android:exported="true"
-            android:enabled="true">
+            android:enabled="true"
+            android:tools:ignore="Instantiatable"
+            xmlns:tools="http://schemas.android.com/tools">
             <intent-filter>
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
