@@ -1,6 +1,7 @@
 name: cent_music
 description: "CENT Music Streaming Platform - High Performance Edition"
 version: 1.0.0+1
+publish_to: 'none'
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -10,15 +11,21 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
 
-  # Media & Engine
+  # Media & Engine (Optimized for Background Play)
   youtube_explode_dart: ^2.2.2
   just_audio: ^0.9.42
-  youtube_player_flutter: ^9.1.1
-  flutter_inappwebview: ^6.1.5
+  audio_service: ^0.18.15 # Vital for Manifest service connection
+  audio_session: ^0.1.21 # Manages audio focus (interruptions from calls)
   
-  # Storage & Caching
-  shared_preferences: ^2.3.2
+  # UI Components & Performance
   cached_network_image: ^3.4.1
+  flutter_spinkit: ^5.2.1
+  google_fonts: ^6.2.1
+
+  # Storage & Utilities
+  shared_preferences: ^2.3.2
+  path_provider: ^2.1.4
+  permission_handler: ^11.3.1 # To handle the new Android 14+ permissions
 
 dev_dependencies:
   flutter_test:
