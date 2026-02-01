@@ -15,9 +15,8 @@ class CentMusicElite extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
         primaryColor: const Color(0xFFD4AF37),
-        scaffoldBackgroundColor: const Color(0xFF050505),
+        scaffoldBackgroundColor: const Color(0xFF020202),
         useMaterial3: true,
-        fontFamily: 'sans-serif',
       ),
       home: const MainScaffold(),
     );
@@ -31,17 +30,15 @@ class MainScaffold extends StatefulWidget {
   State<MainScaffold> createState() => _MainScaffoldState();
 }
 
-class _MainScaffoldState extends State<MainScaffold> {
+class _MainScaffoldState extends State<MainScaffold> with TickerProviderStateMixin {
   final AudioPlayer _player = AudioPlayer();
   final YoutubeExplode _yt = YoutubeExplode();
   
   bool _isPlaying = false;
   bool _isLoading = false;
   Video? _currentVideo;
-  final List<Video> _favorites = [];
   List<Video> _searchResults = [];
   final TextEditingController _searchController = TextEditingController();
-  
   final Color gold = const Color(0xFFD4AF37);
 
   @override
@@ -83,50 +80,48 @@ class _MainScaffoldState extends State<MainScaffold> {
     }
   }
 
-  void _toggleFavorite(Video video) {
-    setState(() {
-      if (_favorites.contains(video)) {
-        _favorites.remove(video);
-      } else {
-        _favorites.add(video);
-      }
-    });
-  }
-
   @override
   void dispose() {
     _player.dispose();
     _yt.close();
+    _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colors.black, gold.withOpacity(0.05), Colors.black],
-          ),
-        ),
-        child: Stack(
-          children: [
-            SafeArea(
-              child: CustomScrollView(
-                slivers: [
-                  _buildSliverAppBar(),
-                  _buildSearchBox(),
-                  _buildSectionTitle("Quick Picks"),
-                  _buildResultsGrid(),
-                  if (_favorites.isNotEmpty) _buildSectionTitle("Your Favorites"),
-                  if (_favorites.isNotEmpty) _buildFavoritesList(),
-                  const SliverToBoxAdapter(child: SizedBox(height: 120)),
-                ],
-              ),
+      body: Stack(
+        children: [
+          _buildAnimatedBackground(),
+          SafeArea(
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                _buildSliverAppBar(),
+                _buildSearchSection(),
+                if (_isLoading) _buildLoadingIndicator(),
+                _buildMusicGrid(),
+                const SliverToBoxAdapter(child: SizedBox(height: 120)),
+              ],
             ),
-            if (_currentVideo != null) _buildGlassMiniPlayer(),
+          ),
+          if (_currentVideo != null) _buildEliteMiniPlayer(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnimatedBackground() {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 800),
+      decoration: BoxDecoration(
+        gradient: RadialGradient(
+          center: const Alignment(0, -0.5),
+          radius: 1.5,
+          colors: [
+            _currentVideo != null ? gold.withOpacity(0.05) : const Color(0xFF151515),
+            const Color(0xFF000000),
           ],
         ),
       ),
@@ -135,35 +130,52 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   Widget _buildSliverAppBar() {
     return SliverAppBar(
-      floating: true,
       backgroundColor: Colors.transparent,
-      elevation: 0,
-      title: Text("CENT ELITE", style: TextStyle(color: gold, fontWeight: FontWeight.w900, letterSpacing: 3)),
-      actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.history_rounded))],
+      floating: true,
+      centerTitle: true,
+      title: Hero(
+        tag: 'logo',
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          decoration: BoxDecoration(
+            border: Border.all(color: gold, width: 2),
+            borderRadius: BorderRadius.circular(2),
+          ),
+          child: Text(
+            "CENT",
+            style: TextStyle(
+              color: gold,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 8,
+              fontSize: 24,
+              decoration: TextDecoration.none,
+            ),
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildSearchBox() {
+  Widget _buildSearchSection() {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: ClipRRect(
+          borderRadius: BorderRadius.circular(25),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
             child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: gold.withOpacity(0.2)),
-              ),
+              color: Colors.white.withOpacity(0.05),
               child: TextField(
                 controller: _searchController,
                 onSubmitted: _searchSongs,
+                style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
-                  prefixIcon: Icon(Icons.search, color: gold),
-                  hintText: "Search artist, song, podcast...",
+                  hintText: "Search Golden Tracks...",
+                  hintStyle: TextStyle(color: gold.withOpacity(0.3)),
+                  prefixIcon: Icon(Icons.search_rounded, color: gold),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.all(15),
+                  contentPadding: const EdgeInsets.all(20),
                 ),
               ),
             ),
@@ -173,52 +185,70 @@ class _MainScaffoldState extends State<MainScaffold> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildLoadingIndicator() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        padding: const EdgeInsets.symmetric(horizontal: 30),
+        child: LinearProgressIndicator(color: gold, backgroundColor: Colors.transparent),
       ),
     );
   }
 
-  Widget _buildResultsGrid() {
-    if (_isLoading) {
-      return const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator(color: Color(0xFFD4AF37))));
+  Widget _buildMusicGrid() {
+    if (_searchResults.isEmpty) {
+      return SliverFillRemaining(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.vibration, color: gold.withOpacity(0.2), size: 50),
+              const SizedBox(height: 10),
+              const Text("Feel the Pulse of Luxury", style: TextStyle(color: Colors.white10, letterSpacing: 2)),
+            ],
+          ),
+        ),
+      );
     }
     return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 15),
+      padding: const EdgeInsets.all(20),
       sliver: SliverGrid(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           childAspectRatio: 0.8,
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
+          mainAxisSpacing: 20,
+          crossAxisSpacing: 20,
         ),
         delegate: SliverChildBuilderDelegate(
           (context, index) {
             final video = _searchResults[index];
-            return GestureDetector(
-              onTap: () => _playVideo(video),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.03),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-                        child: Image.network(video.thumbnails.highResUrl, fit: BoxFit.cover, width: double.infinity),
+            return TweenAnimationBuilder(
+              duration: Duration(milliseconds: 400 + (index * 100)),
+              tween: Tween<double>(begin: 0, end: 1),
+              builder: (context, double value, child) => Opacity(
+                opacity: value,
+                child: Transform.translate(offset: Offset(0, 20 * (1 - value)), child: child),
+              ),
+              child: GestureDetector(
+                onTap: () => _playVideo(video),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.02),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(30),
+                          child: Image.network(video.thumbnails.highResUrl, fit: BoxFit.cover, width: double.infinity),
+                        ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(video.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Text(video.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -229,64 +259,42 @@ class _MainScaffoldState extends State<MainScaffold> {
     );
   }
 
-  Widget _buildFavoritesList() {
-    return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final video = _favorites[index];
-          return ListTile(
-            leading: ClipRRect(borderRadius: BorderRadius.circular(5), child: Image.network(video.thumbnails.lowResUrl)),
-            title: Text(video.title, maxLines: 1),
-            subtitle: Text(video.author, style: TextStyle(color: gold, fontSize: 11)),
-            trailing: IconButton(icon: const Icon(Icons.delete_outline, color: Colors.redAccent), onPressed: () => _toggleFavorite(video)),
-            onTap: () => _playVideo(video),
-          );
-        },
-        childCount: _favorites.length,
-      ),
-    );
-  }
-
-  Widget _buildGlassMiniPlayer() {
+  Widget _buildEliteMiniPlayer() {
     return Positioned(
-      bottom: 10, left: 10, right: 10,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            height: 70,
-            color: Colors.black.withOpacity(0.7),
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: _showFullPlayer,
-                  child: Row(
-                    children: [
-                      Hero(tag: 'thumb', child: CircleAvatar(backgroundImage: NetworkImage(_currentVideo!.thumbnails.lowResUrl))),
-                      const SizedBox(width: 12),
-                      SizedBox(
-                        width: MediaQuery.of(context).size.width * 0.4,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(_currentVideo!.title, maxLines: 1, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                            Text(_currentVideo!.author, style: TextStyle(color: gold, fontSize: 11)),
-                          ],
-                        ),
-                      ),
-                    ],
+      bottom: 25, left: 15, right: 15,
+      child: GestureDetector(
+        onTap: _showFullPlayer,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+            child: Container(
+              height: 80,
+              color: Colors.black.withOpacity(0.7),
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              child: Row(
+                children: [
+                  Hero(
+                    tag: 'art',
+                    child: CircleAvatar(backgroundImage: NetworkImage(_currentVideo!.thumbnails.lowResUrl), radius: 28),
                   ),
-                ),
-                const Spacer(),
-                IconButton(icon: Icon(_favorites.contains(_currentVideo) ? Icons.favorite : Icons.favorite_border, color: gold), onPressed: () => _toggleFavorite(_currentVideo!)),
-                IconButton(
-                  icon: Icon(_isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, size: 35, color: Colors.white),
-                  onPressed: () => _isPlaying ? _player.pause() : _player.play(),
-                ),
-              ],
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(_currentVideo!.title, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text(_currentVideo!.author, style: TextStyle(color: gold, fontSize: 11, letterSpacing: 1)),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(_isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded, size: 45, color: gold),
+                    onPressed: () => _isPlaying ? _player.pause() : _player.play(),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -299,11 +307,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _FullPlayerUI(
-        player: _player,
-        video: _currentVideo!,
-        gold: gold,
-      ),
+      builder: (context) => _FullPlayerUI(player: _player, video: _currentVideo!, gold: gold),
     );
   }
 }
@@ -317,46 +321,47 @@ class _FullPlayerUI extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-      child: Container(
-        height: MediaQuery.of(context).size.height * 0.94,
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.8),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
+    return Container(
+      height: MediaQuery.of(context).size.height,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF0A0A0A), Color(0xFF000000)],
         ),
-        child: Column(
-          children: [
-            const SizedBox(height: 60),
-            Hero(
-              tag: 'thumb',
-              child: Container(
-                width: 320, height: 320,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [BoxShadow(color: gold.withOpacity(0.3), blurRadius: 50)],
-                  image: DecorationImage(image: NetworkImage(video.thumbnails.highResUrl), fit: BoxFit.cover),
-                ),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 60),
+          const Icon(Icons.keyboard_arrow_down_rounded, size: 45, color: Colors.white24),
+          const Spacer(),
+          Hero(
+            tag: 'art',
+            child: Container(
+              width: 320, height: 320,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(40),
+                boxShadow: [BoxShadow(color: gold.withOpacity(0.2), blurRadius: 80, spreadRadius: 5)],
+                image: DecorationImage(image: NetworkImage(video.thumbnails.highResUrl), fit: BoxFit.cover),
               ),
             ),
-            const SizedBox(height: 40),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(video.title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  Text(video.author, style: TextStyle(color: gold, fontSize: 18)),
-                ],
-              ),
+          ),
+          const Spacer(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Column(
+              children: [
+                Text(video.title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, letterSpacing: -0.5)),
+                const SizedBox(height: 12),
+                Text(video.author, style: TextStyle(color: gold, fontSize: 18, letterSpacing: 3, fontWeight: FontWeight.w300)),
+              ],
             ),
-            const Spacer(),
-            _buildSlider(),
-            const SizedBox(height: 20),
-            _buildMainControls(),
-            const Spacer(),
-          ],
-        ),
+          ),
+          const SizedBox(height: 40),
+          _buildSlider(),
+          _buildControls(),
+          const Spacer(flex: 2),
+        ],
       ),
     );
   }
@@ -367,54 +372,61 @@ class _FullPlayerUI extends StatelessWidget {
       builder: (context, snapshot) {
         final pos = snapshot.data ?? Duration.zero;
         final dur = player.duration ?? Duration.zero;
-        return Column(
-          children: [
-            Slider(
-              activeColor: gold,
-              inactiveColor: Colors.white10,
-              value: pos.inSeconds.toDouble(),
-              max: dur.inSeconds.toDouble() > 0 ? dur.inSeconds.toDouble() : 1.0,
-              onChanged: (v) => player.seek(Duration(seconds: v.toInt())),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(_formatDuration(pos), style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                  Text(_formatDuration(dur), style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 30),
+          child: Column(
+            children: [
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(trackHeight: 4, thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6)),
+                child: Slider(
+                  activeColor: gold,
+                  inactiveColor: Colors.white10,
+                  value: pos.inSeconds.toDouble(),
+                  max: dur.inSeconds.toDouble() > 0 ? dur.inSeconds.toDouble() : 1.0,
+                  onChanged: (v) => player.seek(Duration(seconds: v.toInt())),
+                ),
               ),
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(_formatDuration(pos), style: const TextStyle(color: Colors.white30, fontSize: 12)),
+                    Text(_formatDuration(dur), style: const TextStyle(color: Colors.white30, fontSize: 12)),
+                  ],
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
   }
 
-  Widget _buildMainControls() {
+  Widget _buildControls() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.shuffle, color: Colors.white54),
-        const Icon(Icons.skip_previous_rounded, size: 50),
+        const Icon(Icons.skip_previous_rounded, size: 60, color: Colors.white),
+        const SizedBox(width: 30),
         StreamBuilder<PlayerState>(
           stream: player.playerStateStream,
           builder: (context, snapshot) {
             final playing = snapshot.data?.playing ?? false;
             return IconButton(
-              icon: Icon(playing ? Icons.pause_circle_filled : Icons.play_circle_filled, size: 90, color: gold),
+              icon: Icon(playing ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded, size: 100, color: gold),
               onPressed: () => playing ? player.pause() : player.play(),
             );
           },
         ),
-        const Icon(Icons.skip_next_rounded, size: 50),
-        const Icon(Icons.repeat, color: Colors.white54),
+        const SizedBox(width: 30),
+        const Icon(Icons.skip_next_rounded, size: 60, color: Colors.white),
       ],
     );
   }
 
   String _formatDuration(Duration d) {
-    return "${d.inMinutes.remainder(60)}:${d.inSeconds.remainder(60).toString().padLeft(2, '0')}";
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    return "${twoDigits(d.inMinutes.remainder(60))}:${twoDigits(d.inSeconds.remainder(60))}";
   }
 }
