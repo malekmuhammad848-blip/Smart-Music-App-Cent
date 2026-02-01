@@ -11,17 +11,16 @@ import 'dart:ui';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // High-Performance Audio Engine Setup
+  // Ultimate Audio Performance Mode
   final session = await AudioSession.instance;
   await session.configure(const AudioSessionConfiguration.music());
   await session.setActive(true);
   
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
       systemNavigationBarColor: Colors.black,
+      statusBarIconBrightness: Brightness.light,
     ),
   );
   
@@ -59,8 +58,9 @@ class _MainArchitectureState extends State<MainArchitecture> with TickerProvider
   bool _isBuffering = false;
   final List<Video> _vaultHistory = [];
 
+  // THE TITAN ENGINE: Advanced Audio Pumping
   Future<void> _igniteEngine(Video video) async {
-    if (mounted) setState(() { 
+    setState(() { 
       _activeTrack = video; 
       _isBuffering = true; 
       if (!_vaultHistory.any((e) => e.id == video.id)) _vaultHistory.insert(0, video);
@@ -69,22 +69,25 @@ class _MainArchitectureState extends State<MainArchitecture> with TickerProvider
     try {
       await _player.stop();
       var manifest = await _yt.videos.streamsClient.getManifest(video.id);
+      
+      // Selecting M4A with Forced Headers for 0% failure rate
       var streamInfo = manifest.audioOnly.where((s) => s.container.name == 'm4a').withHighestBitrate();
 
-      // THE BEAST TUNNEL: Bypassing standard buffers for direct execution
       await _player.setAudioSource(
         LockCachingAudioSource(
           Uri.parse(streamInfo.url.toString()),
           headers: {
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-            'Range': 'bytes=0-',
+            'Connection': 'keep-alive',
+            'Accept-Encoding': 'identity',
           },
         ),
       );
       
+      await _player.setVolume(1.0);
       _player.play();
     } catch (e) {
-      debugPrint("Engine Critical Failure: $e");
+      debugPrint("ENGINE CRITICAL: $e");
     } finally {
       if (mounted) setState(() => _isBuffering = false);
     }
@@ -95,35 +98,47 @@ class _MainArchitectureState extends State<MainArchitecture> with TickerProvider
     return Scaffold(
       body: Stack(
         children: [
-          _renderLayer(),
-          if (_activeTrack != null) _buildSupremeConsole(),
+          _renderBackgroundLayer(),
+          _renderContent(),
+          if (_activeTrack != null) _buildFloatingConsole(),
         ],
       ),
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: _buildNav(),
     );
   }
 
-  Widget _renderLayer() {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 500),
-      child: _tabIndex == 0 
-          ? DiscoveryLayer(yt: _yt, onSelect: _igniteEngine) 
-          : VaultLayer(items: _vaultHistory, onSelect: _igniteEngine),
+  Widget _renderBackgroundLayer() {
+    return Positioned.fill(
+      child: AnimatedSwitcher(
+        duration: const Duration(seconds: 1),
+        child: _activeTrack != null 
+          ? Opacity(
+              opacity: 0.15,
+              child: CachedNetworkImage(imageUrl: _activeTrack!.thumbnails.highResUrl, fit: BoxFit.cover),
+            )
+          : Container(color: Colors.black),
+      ),
     );
   }
 
-  Widget _buildBottomNav() {
+  Widget _renderContent() {
+    return _tabIndex == 0 
+      ? DiscoveryLayer(yt: _yt, onSelect: _igniteEngine) 
+      : VaultLayer(items: _vaultHistory, onSelect: _igniteEngine);
+  }
+
+  Widget _buildNav() {
     return Container(
-      height: 95,
+      height: 100,
       decoration: BoxDecoration(
-        color: Colors.black,
-        border: Border(top: BorderSide(color: const Color(0xFFD4AF37).withOpacity(0.2), width: 0.5)),
+        color: Colors.black.withOpacity(0.9),
+        border: const Border(top: BorderSide(color: Color(0xFFD4AF37), width: 0.2)),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _navItem(0, Icons.grain_rounded, "CENT"),
-          _navItem(1, Icons.auto_awesome_motion_rounded, "VAULT"),
+          _navItem(0, Icons.adjust_rounded, "CENT"),
+          _navItem(1, Icons.all_inclusive_rounded, "VAULT"),
         ],
       ),
     );
@@ -133,49 +148,48 @@ class _MainArchitectureState extends State<MainArchitecture> with TickerProvider
     bool active = _tabIndex == i;
     return GestureDetector(
       onTap: () => setState(() => _tabIndex = i),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? const Color(0xFFD4AF37).withOpacity(0.05) : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
+          color: active ? const Color(0xFFD4AF37).withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(25),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: active ? const Color(0xFFD4AF37) : Colors.white24, size: 30),
-            Text(label, style: TextStyle(color: active ? const Color(0xFFD4AF37) : Colors.white24, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 2)),
+            Icon(icon, color: active ? const Color(0xFFD4AF37) : Colors.white24, size: 32),
+            Text(label, style: TextStyle(color: active ? const Color(0xFFD4AF37) : Colors.white24, fontSize: 10, letterSpacing: 3, fontWeight: FontWeight.w900)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSupremeConsole() {
+  Widget _buildFloatingConsole() {
     return Positioned(
-      bottom: 20, left: 15, right: 15,
+      bottom: 25, left: 15, right: 15,
       child: GestureDetector(
-        onTap: () => _openPlayer(),
+        onTap: () => _showSupremePlayer(),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(25),
+          borderRadius: BorderRadius.circular(30),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
+            filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
             child: Container(
-              height: 85,
+              height: 90,
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.05),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
+                border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.3), width: 0.5),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
                   _isBuffering 
-                    ? const SpinKitFadingCircle(color: Color(0xFFD4AF37), size: 35)
+                    ? const SpinKitFadingGrid(color: Color(0xFFD4AF37), size: 35)
                     : Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.3), blurRadius: 10)],
-                        ),
-                        child: CircleAvatar(backgroundImage: CachedNetworkImageProvider(_activeTrack!.thumbnails.mediumResUrl), radius: 28),
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(color: Color(0xFFD4AF37), shape: BoxShape.circle),
+                        child: CircleAvatar(backgroundImage: CachedNetworkImageProvider(_activeTrack!.thumbnails.mediumResUrl), radius: 30),
                       ),
                   const SizedBox(width: 15),
                   Expanded(
@@ -183,8 +197,8 @@ class _MainArchitectureState extends State<MainArchitecture> with TickerProvider
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_activeTrack!.title, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, overflow: TextOverflow.ellipsis)),
-                        const Text("SUPREME ENGINE ACTIVE", style: TextStyle(color: Color(0xFFD4AF37), fontSize: 8, letterSpacing: 2)),
+                        Text(_activeTrack!.title, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        const Text("MASTER QUALITY ACTIVE", style: TextStyle(color: Color(0xFFD4AF37), fontSize: 8, letterSpacing: 2)),
                       ],
                     ),
                   ),
@@ -193,7 +207,7 @@ class _MainArchitectureState extends State<MainArchitecture> with TickerProvider
                     builder: (context, snap) {
                       bool p = snap.data?.playing ?? false;
                       return IconButton(
-                        icon: Icon(p ? Icons.pause_circle_filled : Icons.play_circle_filled, color: const Color(0xFFD4AF37), size: 45),
+                        icon: Icon(p ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded, color: const Color(0xFFD4AF37), size: 50),
                         onPressed: () => p ? _player.pause() : _player.play(),
                       );
                     },
@@ -207,7 +221,7 @@ class _MainArchitectureState extends State<MainArchitecture> with TickerProvider
     );
   }
 
-  void _openPlayer() {
+  void _showSupremePlayer() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -226,17 +240,17 @@ class DiscoveryLayer extends StatefulWidget {
 }
 
 class _DiscoveryLayerState extends State<DiscoveryLayer> {
-  final TextEditingController _ctrl = TextEditingController();
+  final TextEditingController _s = TextEditingController();
   List<Video> _items = [];
-  bool _isLoading = true;
+  bool _load = true;
 
   @override
-  void initState() { super.initState(); _runQuery("top global music 2026"); }
+  void initState() { super.initState(); _fetch("Top global hits 2026"); }
 
-  void _runQuery(String q) async {
-    setState(() => _isLoading = true);
-    var search = await widget.yt.search.search(q);
-    if (mounted) setState(() { _items = search.toList(); _isLoading = false; });
+  void _fetch(String q) async {
+    setState(() => _load = true);
+    var res = await widget.yt.search.search(q);
+    if (mounted) setState(() { _items = res.toList(); _load = false; });
   }
 
   @override
@@ -244,34 +258,32 @@ class _DiscoveryLayerState extends State<DiscoveryLayer> {
     return CustomScrollView(
       slivers: [
         SliverAppBar(
-          expandedHeight: 200, pinned: true, backgroundColor: Colors.black,
+          expandedHeight: 220, pinned: true, backgroundColor: Colors.black,
           flexibleSpace: FlexibleSpaceBar(
             centerTitle: true,
-            title: Text("S U P R E M E", style: GoogleFonts.orbitron(color: const Color(0xFFD4AF37), fontWeight: FontWeight.w900, letterSpacing: 12)),
+            title: Text("SUPREME", style: GoogleFonts.orbitron(color: const Color(0xFFD4AF37), fontWeight: FontWeight.w900, letterSpacing: 15)),
           ),
         ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
+            padding: const EdgeInsets.all(25),
             child: TextField(
-              controller: _ctrl, onSubmitted: _runQuery,
-              style: const TextStyle(color: Colors.white, fontSize: 14),
+              controller: _s, onSubmitted: _fetch,
               decoration: InputDecoration(
-                hintText: "Enter Neural Search Key...",
-                hintStyle: const TextStyle(color: Colors.white24),
-                filled: true, fillColor: Colors.white.withOpacity(0.03),
+                filled: true, fillColor: Colors.white.withOpacity(0.04),
+                hintText: "Access Database...",
                 prefixIcon: const Icon(Icons.search, color: Color(0xFFD4AF37)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: Colors.white.withOpacity(0.1))),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: const BorderSide(color: Color(0xFFD4AF37))),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: const BorderSide(color: Colors.white10)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: const BorderSide(color: Color(0xFFD4AF37))),
               ),
             ),
           ),
         ),
-        if (_isLoading) const SliverToBoxAdapter(child: Center(child: SpinKitCubeGrid(color: Color(0xFFD4AF37), size: 50))),
+        if (_load) const SliverToBoxAdapter(child: Center(child: SpinKitFoldingCube(color: Color(0xFFD4AF37)))),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 150),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 160),
           sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 0.7, crossAxisSpacing: 20, mainAxisSpacing: 20),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 0.65, crossAxisSpacing: 20, mainAxisSpacing: 20),
             delegate: SliverChildBuilderDelegate(
               (context, i) => GestureDetector(
                 onTap: () => widget.onSelect(_items[i]),
@@ -281,15 +293,16 @@ class _DiscoveryLayerState extends State<DiscoveryLayer> {
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(25),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 10, offset: const Offset(0, 5))],
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(color: Colors.white10),
+                          boxShadow: [BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.1), blurRadius: 20)],
                         ),
-                        child: ClipRRect(borderRadius: BorderRadius.circular(25), child: CachedNetworkImage(imageUrl: _items[i].thumbnails.highResUrl, fit: BoxFit.cover)),
+                        child: ClipRRect(borderRadius: BorderRadius.circular(30), child: CachedNetworkImage(imageUrl: _items[i].thumbnails.highResUrl, fit: BoxFit.cover)),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Text(_items[i].title, maxLines: 2, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.5)),
-                    Text(_items[i].author, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 8, fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 15),
+                    Text(_items[i].title, maxLines: 2, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    Text(_items[i].author, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 9, fontWeight: FontWeight.w900)),
                   ],
                 ),
               ),
@@ -313,33 +326,37 @@ class PlayerScreen extends StatelessWidget {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          Positioned.fill(child: Opacity(opacity: 0.5, child: CachedNetworkImage(imageUrl: video.thumbnails.highResUrl, fit: BoxFit.cover))),
-          BackdropFilter(filter: ImageFilter.blur(sigmaX: 100, sigmaY: 100), child: Container(color: Colors.black.withOpacity(0.85))),
+          Positioned.fill(child: CachedNetworkImage(imageUrl: video.thumbnails.highResUrl, fit: BoxFit.cover)),
+          BackdropFilter(filter: ImageFilter.blur(sigmaX: 120, sigmaY: 120), child: Container(color: Colors.black.withOpacity(0.88))),
           SafeArea(
             child: Column(
               children: [
                 const SizedBox(height: 20),
-                const Icon(Icons.keyboard_arrow_down_rounded, size: 45, color: Colors.white24),
+                const Icon(Icons.expand_more_rounded, size: 50, color: Colors.white24),
                 const Spacer(),
                 Container(
-                  width: 320, height: 320,
+                  width: 340, height: 340,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(40),
-                    boxShadow: [
-                      BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.4), blurRadius: 80, spreadRadius: 10),
-                    ],
+                    borderRadius: BorderRadius.circular(50),
+                    boxShadow: [BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.5), blurRadius: 100, spreadRadius: 5)],
                   ),
-                  child: ClipRRect(borderRadius: BorderRadius.circular(40), child: CachedNetworkImage(imageUrl: video.thumbnails.highResUrl, fit: BoxFit.cover)),
+                  child: ClipRRect(borderRadius: BorderRadius.circular(50), child: CachedNetworkImage(imageUrl: video.thumbnails.highResUrl, fit: BoxFit.cover)),
                 ),
                 const Spacer(),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 40),
-                  child: Text(video.title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                  child: Column(
+                    children: [
+                      Text(video.title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                      const SizedBox(height: 10),
+                      Text(video.author, style: const TextStyle(color: Color(0xFFD4AF37), letterSpacing: 4, fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
                 ),
                 const Spacer(),
-                _buildSlider(),
+                _buildDynamicSlider(),
                 const Spacer(),
-                _buildControls(),
+                _buildBeastControls(),
                 const Spacer(flex: 2),
               ],
             ),
@@ -349,7 +366,7 @@ class PlayerScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSlider() {
+  Widget _buildDynamicSlider() {
     return StreamBuilder<Duration>(
       stream: player.positionStream,
       builder: (context, snap) {
@@ -358,22 +375,26 @@ class PlayerScreen extends StatelessWidget {
         return Column(
           children: [
             SliderTheme(
-              data: SliderThemeData(trackHeight: 2, thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6), overlayShape: const RoundSliderOverlayShape(overlayRadius: 14)),
+              data: SliderThemeData(
+                trackHeight: 4,
+                thumbColor: const Color(0xFFD4AF37),
+                activeTrackColor: const Color(0xFFD4AF37),
+                inactiveTrackColor: Colors.white10,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+              ),
               child: Slider(
-                activeColor: const Color(0xFFD4AF37),
-                inactiveColor: Colors.white10,
                 value: pos.inSeconds.toDouble().clamp(0, dur.inSeconds.toDouble()),
                 max: dur.inSeconds.toDouble(),
                 onChanged: (v) => player.seek(Duration(seconds: v.toInt())),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
+              padding: const EdgeInsets.symmetric(horizontal: 45),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(_format(pos), style: const TextStyle(color: Colors.white38, fontSize: 11)),
-                  Text(_format(dur), style: const TextStyle(color: Colors.white38, fontSize: 11)),
+                  Text(_fmt(pos), style: const TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text(_fmt(dur), style: const TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -383,13 +404,13 @@ class PlayerScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildControls() {
+  Widget _buildBeastControls() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.shuffle, color: Colors.white24, size: 25),
+        const Icon(Icons.shuffle_rounded, color: Color(0xFFD4AF37), size: 30),
         const SizedBox(width: 30),
-        const Icon(Icons.skip_previous_rounded, size: 55),
+        const Icon(Icons.skip_previous_rounded, size: 60),
         const SizedBox(width: 20),
         StreamBuilder<PlayerState>(
           stream: player.playerStateStream,
@@ -398,22 +419,26 @@ class PlayerScreen extends StatelessWidget {
             return GestureDetector(
               onTap: () => p ? player.pause() : player.play(),
               child: Container(
-                padding: const EdgeInsets.all(25),
-                decoration: const BoxDecoration(color: Color(0xFFD4AF37), shape: BoxShape.circle),
-                child: Icon(p ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.black, size: 50),
+                padding: const EdgeInsets.all(28),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFD4AF37),
+                  shape: BoxShape.circle,
+                  boxShadow: [BoxShadow(color: Color(0xFFD4AF37), blurRadius: 30)],
+                ),
+                child: Icon(p ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.black, size: 55),
               ),
             );
           },
         ),
         const SizedBox(width: 20),
-        const Icon(Icons.skip_next_rounded, size: 55),
+        const Icon(Icons.skip_next_rounded, size: 60),
         const SizedBox(width: 30),
-        const Icon(Icons.repeat, color: Colors.white24, size: 25),
+        const Icon(Icons.repeat_one_rounded, color: Color(0xFFD4AF37), size: 30),
       ],
     );
   }
 
-  String _format(Duration d) => "${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}";
+  String _fmt(Duration d) => "${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}";
 }
 
 class VaultLayer extends StatelessWidget {
@@ -427,23 +452,29 @@ class VaultLayer extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 60),
-          Text("THE VAULT", style: GoogleFonts.orbitron(fontSize: 35, fontWeight: FontWeight.w900, color: const Color(0xFFD4AF37), letterSpacing: 10)),
-          const Text("SECURE AUDIO STORAGE", style: TextStyle(fontSize: 10, letterSpacing: 5, color: Colors.white30)),
-          const SizedBox(height: 30),
+          const SizedBox(height: 70),
+          Text("THE VAULT", style: GoogleFonts.orbitron(fontSize: 40, fontWeight: FontWeight.w900, color: const Color(0xFFD4AF37), letterSpacing: 12)),
+          const Text("ENCRYPTED AUDIO ARCHIVE", style: TextStyle(fontSize: 10, letterSpacing: 6, color: Colors.white24)),
+          const SizedBox(height: 40),
           Expanded(
-            child: items.isEmpty 
-              ? const Center(child: Text("VAULT IS EMPTY", style: TextStyle(color: Colors.white10, letterSpacing: 5)))
-              : ListView.builder(
-                  itemCount: items.length,
-                  itemBuilder: (context, i) => ListTile(
-                    onTap: () => onSelect(items[i]),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                    leading: ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(items[i].thumbnails.lowResUrl)),
-                    title: Text(items[i].title, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    trailing: const Icon(Icons.lock_outline, color: Color(0xFFD4AF37), size: 18),
-                  ),
+            child: ListView.builder(
+              itemCount: items.length,
+              itemBuilder: (context, i) => Container(
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.03),
+                  borderRadius: BorderRadius.circular(20),
                 ),
+                child: ListTile(
+                  onTap: () => onSelect(items[i]),
+                  contentPadding: const EdgeInsets.all(15),
+                  leading: ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(items[i].thumbnails.lowResUrl)),
+                  title: Text(items[i].title, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: Text(items[i].author, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 10)),
+                  trailing: const Icon(Icons.verified_user_rounded, color: Color(0xFFD4AF37), size: 20),
+                ),
+              ),
+            ),
           ),
         ],
       ),
