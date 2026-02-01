@@ -10,22 +10,16 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-
-  # Media & Engine (Optimized for Background Play)
   youtube_explode_dart: ^2.2.2
   just_audio: ^0.9.42
-  audio_service: ^0.18.15 # Vital for Manifest service connection
-  audio_session: ^0.1.21 # Manages audio focus (interruptions from calls)
-  
-  # UI Components & Performance
+  audio_service: ^0.18.15
+  audio_session: ^0.1.21
   cached_network_image: ^3.4.1
   flutter_spinkit: ^5.2.1
   google_fonts: ^6.2.1
-
-  # Storage & Utilities
   shared_preferences: ^2.3.2
   path_provider: ^2.1.4
-  permission_handler: ^11.3.1 # To handle the new Android 14+ permissions
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:
