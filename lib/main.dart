@@ -68,35 +68,30 @@ class _MainArchitectureState extends State<MainArchitecture> {
 
     try {
       await _player.stop();
-      await _player.setVolume(1.0);
-
       var manifest = await _yt.videos.streamsClient.getManifest(video.id);
       var audioStream = manifest.audioOnly.withHighestBitrate();
 
-      await _player.setAudioSource(
-        AudioSource.uri(
-          Uri.parse(audioStream.url.toString()),
-          tag: MediaItem(
-            id: video.id.value,
-            album: video.author,
-            title: video.title,
-            artUri: Uri.parse(video.thumbnails.highResUrl),
+      if (audioStream != null) {
+        await _player.setAudioSource(
+          AudioSource.uri(
+            Uri.parse(audioStream.url.toString()),
+            tag: MediaItem(
+              id: video.id.value,
+              album: video.author,
+              title: video.title,
+              duration: video.duration,
+              artUri: Uri.parse(video.thumbnails.highResUrl),
+            ),
           ),
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Referer': 'https://www.youtube.com/',
-          },
-        ),
-      );
-      
-      _player.play();
+          preload: true,
+        );
+        _player.play();
+      }
     } catch (e) {
       try {
         var streamUrl = await _yt.videos.streamsClient.getHttpLiveStreamUrl(video.id);
         if (streamUrl != null) {
-          await _player.setUrl(streamUrl, headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          });
+          await _player.setUrl(streamUrl);
           _player.play();
         }
       } catch (err) {
@@ -337,7 +332,7 @@ class PlayerScreen extends StatelessWidget {
                   stream: player.positionStream,
                   builder: (context, snap) {
                     final pos = snap.data ?? Duration.zero;
-                    final dur = player.duration ?? const Duration(seconds: 1);
+                    final dur = player.duration ?? video.duration ?? const Duration(seconds: 1);
                     return Column(
                       children: [
                         Slider(
@@ -364,12 +359,15 @@ class PlayerScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.skip_previous_rounded, size: 50),
+                    IconButton(icon: const Icon(Icons.skip_previous_rounded, size: 50), onPressed: () {}),
                     const SizedBox(width: 30),
                     StreamBuilder<PlayerState>(
                       stream: player.playerStateStream,
                       builder: (context, snap) {
                         bool p = snap.data?.playing ?? false;
+                        if (snap.data?.processingState == ProcessingState.buffering) {
+                          return const SpinKitRing(color: Color(0xFFD4AF37), size: 50);
+                        }
                         return GestureDetector(
                           onTap: () => p ? player.pause() : player.play(),
                           child: Container(
@@ -381,7 +379,7 @@ class PlayerScreen extends StatelessWidget {
                       },
                     ),
                     const SizedBox(width: 30),
-                    const Icon(Icons.skip_next_rounded, size: 50),
+                    IconButton(icon: const Icon(Icons.skip_next_rounded, size: 50), onPressed: () {}),
                   ],
                 ),
                 const Spacer(flex: 2),
