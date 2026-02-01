@@ -49,11 +49,8 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.debug
-            
-            // Fixed R8 Shrinking issues
             minifyEnabled false
             shrinkResources false
-            
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -82,4 +79,5 @@ dependencies {
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'androidx.core:core-ktx:1.13.1'
     implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'com.ryanheise:audio_service:0.18.15'
 }
