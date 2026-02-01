@@ -5,12 +5,15 @@ import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
   final session = await AudioSession.instance;
   await session.configure(const AudioSessionConfiguration.music());
+
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -19,6 +22,7 @@ void main() async {
       statusBarIconBrightness: Brightness.light,
     ),
   );
+  
   runApp(const CentSupremeFinal());
 }
 
@@ -33,8 +37,7 @@ class CentSupremeFinal extends StatelessWidget {
         brightness: Brightness.dark,
         primaryColor: const Color(0xFFD4AF37),
         scaffoldBackgroundColor: const Color(0xFF000000),
-        splashColor: const Color(0xFFD4AF37).withOpacity(0.1),
-        highlightColor: Colors.transparent,
+        textTheme: GoogleFonts.orbitronTextTheme(ThemeData.dark().textTheme),
       ),
       home: const MainArchitecture(),
     );
@@ -210,13 +213,14 @@ class _DiscoveryLayerState extends State<DiscoveryLayer> {
   @override
   void initState() {
     super.initState();
-    _search("high fidelity 2026");
+    _search("trending music 2026");
   }
 
   void _search(String q) async {
+    if (!mounted) return;
     setState(() => _l = true);
     final res = await widget.yt.search.search(q);
-    setState(() { _r = res.toList(); _l = false; });
+    if (mounted) setState(() { _r = res.toList(); _l = false; });
   }
 
   @override
@@ -227,7 +231,7 @@ class _DiscoveryLayerState extends State<DiscoveryLayer> {
           expandedHeight: 200, pinned: true, backgroundColor: Colors.black,
           flexibleSpace: FlexibleSpaceBar(
             centerTitle: true,
-            title: const Text("C E N T", style: TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.w900, letterSpacing: 15, fontSize: 28)),
+            title: Text("C E N T", style: GoogleFonts.orbitron(color: const Color(0xFFD4AF37), fontWeight: FontWeight.w900, letterSpacing: 15, fontSize: 28)),
           ),
         ),
         SliverToBoxAdapter(
