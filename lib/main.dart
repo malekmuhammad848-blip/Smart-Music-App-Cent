@@ -6,15 +6,12 @@ import 'package:audio_session/audio_session.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:ui';
-import 'dart:async';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize High-Level Audio Engine
   final session = await AudioSession.instance;
   await session.configure(const AudioSessionConfiguration.music());
-
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -22,12 +19,11 @@ void main() async {
       statusBarIconBrightness: Brightness.light,
     ),
   );
-  
-  runApp(const CentSupremeApp());
+  runApp(const CentSupremeFinal());
 }
 
-class CentSupremeApp extends StatelessWidget {
-  const CentSupremeApp({super.key});
+class CentSupremeFinal extends StatelessWidget {
+  const CentSupremeFinal({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -36,191 +32,158 @@ class CentSupremeApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
         primaryColor: const Color(0xFFD4AF37),
-        hintColor: const Color(0xFFD4AF37),
         scaffoldBackgroundColor: const Color(0xFF000000),
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+        splashColor: const Color(0xFFD4AF37).withOpacity(0.1),
+        highlightColor: Colors.transparent,
       ),
-      home: const MainSupremeArchitecture(),
+      home: const MainArchitecture(),
     );
   }
 }
 
-class MainSupremeArchitecture extends StatefulWidget {
-  const MainSupremeArchitecture({super.key});
+class MainArchitecture extends StatefulWidget {
+  const MainArchitecture({super.key});
   @override
-  State<MainSupremeArchitecture> createState() => _MainSupremeArchitectureState();
+  State<MainArchitecture> createState() => _MainArchitectureState();
 }
 
-class _MainSupremeArchitectureState extends State<MainSupremeArchitecture> with TickerProviderStateMixin {
+class _MainArchitectureState extends State<MainArchitecture> {
   int _tabIndex = 0;
   final AudioPlayer _player = AudioPlayer();
   final YoutubeExplode _yt = YoutubeExplode();
-  
-  Video? _currentTrack;
-  bool _isLoadingTrack = false;
-  double _volume = 1.0;
-  
-  final List<Video> _favs = [];
+  Video? _activeTrack;
+  bool _isBuffering = false;
   final List<Video> _history = [];
-  
-  late AnimationController _playPauseController;
 
-  @override
-  void initState() {
-    super.initState();
-    _playPauseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
-    _setupAudioListeners();
-  }
-
-  void _setupAudioListeners() {
-    _player.playerStateStream.listen((state) {
-      if (state.playing) {
-        _playPauseController.forward();
-      } else {
-        _playPauseController.reverse();
-      }
-    });
-  }
-
-  Future<void> _igniteEngine(Video video) async {
-    if (_currentTrack?.id == video.id && _player.playing) return;
-    
+  Future<void> _igniteStream(Video video) async {
+    if (_activeTrack?.id == video.id && _player.playing) return;
     setState(() {
-      _currentTrack = video;
-      _isLoadingTrack = true;
+      _activeTrack = video;
+      _isBuffering = true;
       if (!_history.any((e) => e.id == video.id)) _history.insert(0, video);
     });
-
     try {
-      var manifest = await _yt.videos.streamsClient.getManifest(video.id);
-      var audioStream = manifest.audioOnly.withHighestBitrate();
-      
+      final manifest = await _yt.videos.streamsClient.getManifest(video.id);
+      final audioStream = manifest.audioOnly.withHighestBitrate();
       await _player.setAudioSource(
-        AudioSource.uri(
-          Uri.parse(audioStream.url.toString()),
-          tag: video.title,
-        ),
-        preload: true,
+        AudioSource.uri(Uri.parse(audioStream.url.toString()), tag: video.title),
       );
       _player.play();
     } catch (e) {
-      _triggerAlert("CORE_SIGNAL_ERROR: ARCHIVE NOT FOUND");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(backgroundColor: Color(0xFFD4AF37), content: Text("ENGINE_SYNC_ERROR")),
+      );
     } finally {
-      if (mounted) setState(() => _isLoadingTrack = false);
+      if (mounted) setState(() => _isBuffering = false);
     }
-  }
-
-  void _triggerAlert(String m) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFFD4AF37),
-        content: Text(m, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-      ),
-    );
   }
 
   @override
   void dispose() {
     _player.dispose();
     _yt.close();
-    _playPauseController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> _fragments = [
-      DiscoveryFragment(yt: _yt, onPlay: _igniteEngine),
-      VaultFragment(favs: _favs, history: _history, onPlay: _igniteEngine),
-      EngineFragment(player: _player, onVolumeChanged: (v) {
-        setState(() => _volume = v);
-        _player.setVolume(v);
-      }, currentVolume: _volume),
-    ];
-
     return Scaffold(
       body: Stack(
         children: [
-          IndexedStack(index: _tabIndex, children: _fragments),
-          if (_currentTrack != null) _supremeFloatingConsole(),
+          _renderLayer(),
+          if (_activeTrack != null) _buildConsole(),
         ],
       ),
-      bottomNavigationBar: _imperialNavBar(),
+      bottomNavigationBar: _buildNav(),
     );
   }
 
-  Widget _imperialNavBar() {
+  Widget _renderLayer() {
+    switch (_tabIndex) {
+      case 0: return DiscoveryLayer(yt: _yt, onSelect: _igniteStream);
+      case 1: return VaultLayer(items: _history, onSelect: _igniteStream);
+      case 2: return const EngineLayer();
+      default: return const SizedBox();
+    }
+  }
+
+  Widget _buildNav() {
     return Container(
-      height: 90,
-      decoration: BoxDecoration(
+      height: 85,
+      decoration: const BoxDecoration(
         color: Colors.black,
-        border: Border(top: BorderSide(color: const Color(0xFFD4AF37).withOpacity(0.2), width: 0.5)),
+        border: Border(top: BorderSide(color: Colors.white10, width: 0.5)),
       ),
-      child: BottomNavigationBar(
-        currentIndex: _tabIndex,
-        onTap: (i) => setState(() => _tabIndex = i),
-        backgroundColor: Colors.transparent,
-        selectedItemColor: const Color(0xFFD4AF37),
-        unselectedItemColor: Colors.white10,
-        selectedFontSize: 10,
-        unselectedFontSize: 10,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.blur_on_rounded, size: 28), label: 'DISCOVER'),
-          BottomNavigationBarItem(icon: Icon(Icons.layers_rounded, size: 28), label: 'VAULT'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings_input_antenna_rounded, size: 28), label: 'ENGINE'),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _navBtn(0, Icons.blur_on_rounded, "CENT"),
+          _navBtn(1, Icons.layers_rounded, "VAULT"),
+          _navBtn(2, Icons.settings_input_antenna_rounded, "ENGINE"),
         ],
       ),
     );
   }
 
-  Widget _supremeFloatingConsole() {
+  Widget _navBtn(int i, IconData icon, String label) {
+    bool a = _tabIndex == i;
+    return GestureDetector(
+      onTap: () => setState(() => _tabIndex = i),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: a ? const Color(0xFFD4AF37) : Colors.white24, size: 28),
+          const SizedBox(height: 5),
+          Text(label, style: TextStyle(color: a ? const Color(0xFFD4AF37) : Colors.white24, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConsole() {
     return Positioned(
-      bottom: 10, left: 10, right: 10,
+      bottom: 15, left: 15, right: 15,
       child: GestureDetector(
-        onTap: _openVisualizer,
-        onVerticalDragEnd: (details) {
-          if (details.primaryVelocity! < -300) _openVisualizer();
-        },
+        onTap: () => showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (context) => PlayerScreen(player: _player, video: _activeTrack!),
+        ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
             child: Container(
               height: 75,
-              color: const Color(0xFF111111).withOpacity(0.7),
+              color: Colors.white.withOpacity(0.08),
               padding: const EdgeInsets.symmetric(horizontal: 15),
               child: Row(
                 children: [
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Hero(
-                        tag: 'art_${_currentTrack!.id}',
-                        child: Container(
-                          width: 50, height: 50,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            image: DecorationImage(image: CachedNetworkImageProvider(_currentTrack!.thumbnails.mediumResUrl), fit: BoxFit.cover),
-                          ),
-                        ),
-                      ),
-                      if (_isLoadingTrack) const SpinKitRing(color: Color(0xFFD4AF37), size: 50, strokeWidth: 2),
-                    ],
-                  ),
+                  _isBuffering 
+                    ? const SpinKitDoubleBounce(color: Color(0xFFD4AF37), size: 35)
+                    : CircleAvatar(backgroundImage: CachedNetworkImageProvider(_activeTrack!.thumbnails.mediumResUrl), radius: 25),
                   const SizedBox(width: 15),
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_currentTrack!.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        const Text("CENT SUPREME SIGNAL • 1411 KBPS", style: TextStyle(color: Color(0xFFD4AF37), fontSize: 7, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                        Text(_activeTrack!.title, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        const Text("GOLD SIGNAL • ACTIVE", style: TextStyle(color: Color(0xFFD4AF37), fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
                       ],
                     ),
                   ),
-                  _playbackButton(40),
+                  StreamBuilder<PlayerState>(
+                    stream: _player.playerStateStream,
+                    builder: (context, snap) {
+                      bool p = snap.data?.playing ?? false;
+                      return IconButton(
+                        icon: Icon(p ? Icons.pause_rounded : Icons.play_arrow_rounded, color: const Color(0xFFD4AF37), size: 35),
+                        onPressed: () => p ? _player.pause() : _player.play(),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -229,189 +192,165 @@ class _MainSupremeArchitectureState extends State<MainSupremeArchitecture> with 
       ),
     );
   }
-
-  Widget _playbackButton(double size) {
-    return StreamBuilder<PlayerState>(
-      stream: _player.playerStateStream,
-      builder: (context, snap) {
-        bool isP = snap.data?.playing ?? false;
-        return IconButton(
-          icon: Icon(isP ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded, color: const Color(0xFFD4AF37), size: size),
-          onPressed: () => isP ? _player.pause() : _player.play(),
-        );
-      },
-    );
-  }
-
-  void _openVisualizer() {
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: '',
-      transitionDuration: const Duration(milliseconds: 400),
-      pageBuilder: (context, anim1, anim2) => SupremeVisualizer(
-        player: _player,
-        video: _currentTrack!,
-        isFav: _favs.any((v) => v.id == _currentTrack!.id),
-        onFavToggle: () => setState(() {
-          if (_favs.any((v) => v.id == _currentTrack!.id)) {
-            _favs.removeWhere((v) => v.id == _currentTrack!.id);
-          } else {
-            _favs.add(_currentTrack!);
-          }
-        }),
-      ),
-      transitionBuilder: (context, anim1, anim2, child) {
-        return SlideTransition(position: Tween(begin: const Offset(0, 1), end: const Offset(0, 0)).animate(anim1), child: child);
-      },
-    );
-  }
 }
 
-// --- DISCOVERY LAYER (HIGH DENSITY GRID) ---
-class DiscoveryFragment extends StatefulWidget {
+class DiscoveryLayer extends StatefulWidget {
   final YoutubeExplode yt;
-  final Function(Video) onPlay;
-  const DiscoveryFragment({super.key, required this.yt, required this.onPlay});
+  final Function(Video) onSelect;
+  const DiscoveryLayer({super.key, required this.yt, required this.onSelect});
   @override
-  State<DiscoveryFragment> createState() => _DiscoveryFragmentState();
+  State<DiscoveryLayer> createState() => _DiscoveryLayerState();
 }
 
-class _DiscoveryFragmentState extends State<DiscoveryFragment> {
-  final TextEditingController _search = TextEditingController();
-  List<Video> _items = [];
-  bool _loading = true;
+class _DiscoveryLayerState extends State<DiscoveryLayer> {
+  final TextEditingController _c = TextEditingController();
+  List<Video> _r = [];
+  bool _l = true;
 
   @override
   void initState() {
     super.initState();
-    _loadInitial();
+    _search("high fidelity 2026");
   }
 
-  void _loadInitial() async {
-    try {
-      var res = await widget.yt.search.search("ultra high fidelity music 2026", filter: TypeFilters.video);
-      if (mounted) setState(() { _items = res.toList(); _loading = false; });
-    } catch (_) {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  void _runSearch(String v) async {
-    setState(() => _loading = true);
-    var res = await widget.yt.search.search(v);
-    setState(() { _items = res.toList(); _loading = false; });
+  void _search(String q) async {
+    setState(() => _l = true);
+    final res = await widget.yt.search.search(q);
+    setState(() { _r = res.toList(); _l = false; });
   }
 
   @override
   Widget build(BuildContext context) {
     return CustomScrollView(
-      physics: const BouncingScrollPhysics(),
       slivers: [
         SliverAppBar(
-          expandedHeight: 240, pinned: true, backgroundColor: Colors.black,
+          expandedHeight: 200, pinned: true, backgroundColor: Colors.black,
           flexibleSpace: FlexibleSpaceBar(
             centerTitle: true,
-            title: const Text("C E N T", style: TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.w900, letterSpacing: 12, fontSize: 24)),
-            background: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFF222222), Colors.black]),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Icon(Icons.vibration_rounded, color: const Color(0xFFD4AF37).withOpacity(0.05), size: 250),
-                  const SpinKitDoubleBounce(color: Colors.white10, size: 200),
-                ],
-              ),
-            ),
+            title: const Text("C E N T", style: TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.w900, letterSpacing: 15, fontSize: 28)),
           ),
         ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+            padding: const EdgeInsets.all(20),
             child: TextField(
-              controller: _search, onSubmitted: _runSearch,
-              style: const TextStyle(color: Colors.white),
+              controller: _c, onSubmitted: _search,
               decoration: InputDecoration(
-                filled: true, fillColor: const Color(0xFF111111),
+                filled: true, fillColor: Colors.white.withOpacity(0.05),
                 hintText: "Access Neural Network...",
-                hintStyle: const TextStyle(color: Colors.white24, letterSpacing: 2),
                 prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFFD4AF37)),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
               ),
             ),
           ),
         ),
-        if (_loading) const SliverToBoxAdapter(child: Center(child: SpinKitCubeGrid(color: Color(0xFFD4AF37), size: 40))),
+        if (_l) const SliverToBoxAdapter(child: Center(child: SpinKitPulse(color: Color(0xFFD4AF37)))),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(15, 0, 15, 120),
           sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2, childAspectRatio: 0.65, mainAxisSpacing: 15, crossAxisSpacing: 15,
-            ),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 0.7, crossAxisSpacing: 15, mainAxisSpacing: 15),
             delegate: SliverChildBuilderDelegate(
-              (context, i) => _buildSupremeCard(_items[i]),
-              childCount: _items.length,
+              (context, i) => GestureDetector(
+                onTap: () => widget.onSelect(_r[i]),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(20), child: CachedNetworkImage(imageUrl: _r[i].thumbnails.highResUrl, fit: BoxFit.cover))),
+                    const SizedBox(height: 10),
+                    Text(_r[i].title, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    Text(_r[i].author, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 9, fontWeight: FontWeight.w900)),
+                  ],
+                ),
+              ),
+              childCount: _r.length,
             ),
           ),
         ),
       ],
     );
   }
-
-  Widget _buildSupremeCard(Video v) {
-    return GestureDetector(
-      onTap: () => widget.onPlay(v),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(25),
-                image: DecorationImage(image: CachedNetworkImageProvider(v.thumbnails.highResUrl), fit: BoxFit.cover),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 10, offset: const Offset(0, 8))],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(v.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, height: 1.3)),
-          const SizedBox(height: 4),
-          Text(v.author, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1)),
-        ],
-      ),
-    );
-  }
 }
 
-// --- SUPREME VISUALIZER (FULL SCREEN EXPERIENCE) ---
-class SupremeVisualizer extends StatelessWidget {
+class PlayerScreen extends StatelessWidget {
   final AudioPlayer player;
   final Video video;
-  final bool isFav;
-  final VoidCallback onFavToggle;
-  const SupremeVisualizer({super.key, required this.player, required this.video, required this.isFav, required this.onFavToggle});
+  const PlayerScreen({super.key, required this.player, required this.video});
 
   @override
   Widget build(BuildContext context) {
-    const gold = Color(0xFFD4AF37);
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
           Positioned.fill(child: Opacity(opacity: 0.4, child: CachedNetworkImage(imageUrl: video.thumbnails.highResUrl, fit: BoxFit.cover))),
-          BackdropFilter(filter: ImageFilter.blur(sigmaX: 100, sigmaY: 100), child: Container(color: Colors.black.withOpacity(0.85))),
+          BackdropFilter(filter: ImageFilter.blur(sigmaX: 100, sigmaY: 100), child: Container(color: Colors.black.withOpacity(0.8))),
           SafeArea(
             child: Column(
               children: [
-                _buildHeader(context, gold),
+                IconButton(icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 45), onPressed: () => Navigator.pop(context)),
                 const Spacer(),
-                _buildArtSection(gold),
+                Container(
+                  width: 300, height: 300,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(30),
+                    image: DecorationImage(image: CachedNetworkImageProvider(video.thumbnails.highResUrl), fit: BoxFit.cover),
+                    boxShadow: [BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.2), blurRadius: 50)],
+                  ),
+                ),
                 const Spacer(),
-                _buildTrackInfo(gold),
+                Text(video.title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 const Spacer(),
-                _buildPlaybackEngine(player, gold),
+                StreamBuilder<Duration>(
+                  stream: player.positionStream,
+                  builder: (context, snap) {
+                    final pos = snap.data ?? Duration.zero;
+                    final dur = player.duration ?? const Duration(seconds: 1);
+                    return Column(
+                      children: [
+                        Slider(
+                          activeColor: const Color(0xFFD4AF37),
+                          value: pos.inSeconds.toDouble().clamp(0, dur.inSeconds.toDouble()),
+                          max: dur.inSeconds.toDouble(),
+                          onChanged: (v) => player.seek(Duration(seconds: v.toInt())),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 25),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text("${pos.inMinutes}:${(pos.inSeconds % 60).toString().padLeft(2, '0')}", style: const TextStyle(color: Colors.white24, fontSize: 10)),
+                              Text("${dur.inMinutes}:${(dur.inSeconds % 60).toString().padLeft(2, '0')}", style: const TextStyle(color: Colors.white24, fontSize: 10)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const Spacer(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.skip_previous_rounded, size: 50),
+                    const SizedBox(width: 30),
+                    StreamBuilder<PlayerState>(
+                      stream: player.playerStateStream,
+                      builder: (context, snap) {
+                        bool p = snap.data?.playing ?? false;
+                        return GestureDetector(
+                          onTap: () => p ? player.pause() : player.play(),
+                          child: Container(
+                            width: 85, height: 85,
+                            decoration: const BoxDecoration(color: Color(0xFFD4AF37), shape: BoxShape.circle),
+                            child: Icon(p ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.black, size: 50),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 30),
+                    const Icon(Icons.skip_next_rounded, size: 50),
+                  ],
+                ),
                 const Spacer(flex: 2),
               ],
             ),
@@ -420,127 +359,46 @@ class SupremeVisualizer extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildHeader(BuildContext ctx, Color g) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 45), onPressed: () => Navigator.pop(ctx)),
-          const Text("CENT SUPREME PLAYER", style: TextStyle(letterSpacing: 4, fontSize: 9, fontWeight: FontWeight.w900, color: Colors.white54)),
-          IconButton(icon: Icon(isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded, color: g, size: 28), onPressed: onFavToggle),
-        ],
-      ),
-    );
-  }
+class VaultLayer extends StatelessWidget {
+  final List<Video> items;
+  final Function(Video) onSelect;
+  const VaultLayer({super.key, required this.items, required this.onSelect});
 
-  Widget _buildArtSection(Color g) {
-    return Hero(
-      tag: 'art_${video.id}',
-      child: Container(
-        width: 300, height: 300,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(35),
-          image: DecorationImage(image: CachedNetworkImageProvider(video.thumbnails.highResUrl), fit: BoxFit.cover),
-          boxShadow: [
-            BoxShadow(color: g.withOpacity(0.2), blurRadius: 80, spreadRadius: 5),
-            BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTrackInfo(Color g) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: Column(
-        children: [
-          Text(video.title, textAlign: TextAlign.center, maxLines: 2, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
-          const SizedBox(height: 12),
-          Text(video.author.toUpperCase(), style: TextStyle(color: g, letterSpacing: 6, fontSize: 13, fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlaybackEngine(AudioPlayer p, Color g) {
-    return Column(
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(25),
       children: [
-        StreamBuilder<Duration>(
-          stream: p.positionStream,
-          builder: (context, snap) {
-            final pos = snap.data ?? Duration.zero;
-            final dur = p.duration ?? Duration.zero;
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: SliderTheme(
-                    data: SliderThemeData(
-                      trackHeight: 3,
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-                      activeTrackColor: g,
-                      inactiveTrackColor: Colors.white10,
-                      thumbColor: Colors.white,
-                    ),
-                    child: Slider(
-                      value: pos.inSeconds.toDouble(),
-                      max: dur.inSeconds.toDouble() > 0 ? dur.inSeconds.toDouble() : 1.0,
-                      onChanged: (v) => p.seek(Duration(seconds: v.toInt())),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(_formatDuration(pos), style: const TextStyle(color: Colors.white30, fontSize: 10, fontWeight: FontWeight.bold)),
-                      Text(_formatDuration(dur), style: const TextStyle(color: Colors.white30, fontSize: 10, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-        const SizedBox(height: 20),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.shuffle_rounded, color: Colors.white24, size: 22),
-            const SizedBox(width: 30),
-            const Icon(Icons.skip_previous_rounded, size: 55),
-            const SizedBox(width: 20),
-            StreamBuilder<PlayerState>(
-              stream: p.playerStateStream,
-              builder: (context, snap) {
-                bool isP = snap.data?.playing ?? false;
-                return GestureDetector(
-                  onTap: () => isP ? p.pause() : p.play(),
-                  child: Container(
-                    width: 90, height: 90,
-                    decoration: BoxDecoration(color: g, shape: BoxShape.circle, boxShadow: [BoxShadow(color: g.withOpacity(0.3), blurRadius: 25)]),
-                    child: Icon(isP ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.black, size: 60),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(width: 20),
-            const Icon(Icons.skip_next_rounded, size: 55),
-            const SizedBox(width: 30),
-            const Icon(Icons.repeat_rounded, color: Colors.white24, size: 22),
-          ],
-        ),
+        const SizedBox(height: 60),
+        const Text("VAULT", style: TextStyle(fontSize: 35, fontWeight: FontWeight.w100, letterSpacing: 10)),
+        const Divider(color: Color(0xFFD4AF37), height: 40),
+        ...items.map((v) => ListTile(
+          onTap: () => onSelect(v),
+          contentPadding: EdgeInsets.zero,
+          leading: ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.network(v.thumbnails.lowResUrl)),
+          title: Text(v.title, maxLines: 1, style: const TextStyle(fontSize: 14)),
+          subtitle: Text(v.author, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 10)),
+        )),
       ],
     );
   }
+}
 
-  String _formatDuration(Duration d) {
-    String twoDigits(int n) => n.toString().padLeft(2, "0");
-    return "${twoDigits(d.inMinutes.remainder(60))}:${twoDigits(d.inSeconds.remainder(60))}";
+class EngineLayer extends StatelessWidget {
+  const EngineLayer({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SpinKitScanner(color: Color(0xFFD4AF37), size: 100),
+          SizedBox(height: 30),
+          Text("CORE ENGINE 2.0", style: TextStyle(letterSpacing: 10, fontWeight: FontWeight.w100)),
+        ],
+      ),
+    );
   }
-  
+}
