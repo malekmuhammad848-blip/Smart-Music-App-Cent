@@ -4,9 +4,13 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <application
         android:name="${applicationName}"
         android:label="CENT Music"
@@ -14,7 +18,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:allowBackup="true"
         android:theme="@style/LaunchTheme"
-        android:requestLegacyExternalStorage="true">
+        android:requestLegacyExternalStorage="true"
+        android:hardwareAccelerated="true"
+        android:largeHeap="true">
         
         <activity
             android:name=".MainActivity"
@@ -29,16 +35,12 @@
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
             
-            <meta-data
-                android:name="io.flutter.embedding.android.SplashScreenDrawable"
-                android:resource="@drawable/launch_background" />
-            
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
@@ -49,9 +51,12 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        
+
         <service
             android:name="io.flutter.plugins.audiofile.AudioService"
-            android:exported="false" />
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback"
+            android:enabled="true" />
+
     </application>
 </manifest>
