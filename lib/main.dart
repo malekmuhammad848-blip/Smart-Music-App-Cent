@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -58,20 +59,44 @@ class _MainArchitectureState extends State<MainArchitecture> {
 
   Future<void> _igniteEngine(Video video) async {
     if (_activeTrack?.id == video.id && _player.playing) return;
+    
     setState(() {
       _activeTrack = video;
       _isBuffering = true;
       if (!_history.any((e) => e.id == video.id)) _history.insert(0, video);
     });
+
     try {
+      await _player.stop();
+      await _player.setVolume(1.0);
+
       final manifest = await _yt.videos.streamsClient.getManifest(video.id);
       final audioStream = manifest.audioOnly.withHighestBitrate();
-      await _player.setAudioSource(
-        AudioSource.uri(Uri.parse(audioStream.url.toString()), tag: video.title),
-      );
-      _player.play();
+
+      if (audioStream != null) {
+        await _player.setAudioSource(
+          AudioSource.uri(
+            Uri.parse(audioStream.url.toString()),
+            tag: MediaItem(
+              id: video.id.value,
+              album: video.author,
+              title: video.title,
+              artUri: Uri.parse(video.thumbnails.highResUrl),
+            ),
+          ),
+        );
+        _player.play();
+      }
     } catch (e) {
-      debugPrint("ENGINE_FAILURE: $e");
+      try {
+        var track = await _yt.videos.streamsClient.getHttpLiveStreamUrl(video.id);
+        if (track != null) {
+          await _player.setUrl(track);
+          _player.play();
+        }
+      } catch (err) {
+        debugPrint("CRITICAL_ENGINE_FAILURE: $err");
+      }
     } finally {
       if (mounted) setState(() => _isBuffering = false);
     }
