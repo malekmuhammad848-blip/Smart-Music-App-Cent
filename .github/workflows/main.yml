@@ -1,4 +1,4 @@
-Name: Android Build Fix
+name: Android Build Fix
 
 on:
   push:
