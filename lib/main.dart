@@ -11,73 +11,68 @@ import 'dart:ui';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // الاستحواذ على النظام: تفعيل بروتوكول الأولوية القصوى
   final session = await AudioSession.instance;
   await session.configure(const AudioSessionConfiguration.music());
   await session.setActive(true);
 
-  // السيطرة الكاملة على عتاد الجهاز
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
-  runApp(const CentGodMode());
+  runApp(const CentSupremeApp());
 }
 
-class CentGodMode extends StatelessWidget {
-  const CentGodMode({super.key});
+class CentSupremeApp extends StatelessWidget {
+  const CentSupremeApp({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: Colors.black,
-        textTheme: GoogleFonts.cinzelTextTheme(ThemeData.dark().textTheme),
+        scaffoldBackgroundColor: const Color(0xFF000000),
+        textTheme: GoogleFonts.syneTextTheme(ThemeData.dark().textTheme),
       ),
-      home: const GodEngine(),
+      home: const MainEngineCore(),
     );
   }
 }
 
-class GodEngine extends StatefulWidget {
-  const GodEngine({super.key});
+class MainEngineCore extends StatefulWidget {
+  const MainEngineCore({super.key});
   @override
-  State<GodEngine> createState() => _GodEngineState();
+  State<MainEngineCore> createState() => _MainEngineCoreState();
 }
 
-class _GodEngineState extends State<GodEngine> {
-  final AudioPlayer _player = AudioPlayer();
+class _MainEngineCoreState extends State<MainEngineCore> {
+  final AudioPlayer _core = AudioPlayer();
   final YoutubeExplode _yt = YoutubeExplode();
-  Video? _activeSignal;
-  bool _isIgniting = false;
-  int _sector = 0;
-  final List<Video> _history = [];
+  Video? _activeTrack;
+  bool _isConnecting = false;
+  int _tabIndex = 0;
+  final List<Video> _vault = [];
 
-  // محرك الانفجار (The Ignitor): تشغيل فوري بدون انتظار
-  Future<void> _ignite(Video video) async {
-    setState(() { _activeSignal = video; _isIgniting = true; });
-    if (!_history.any((v) => v.id == video.id)) _history.insert(0, video);
+  Future<void> _fire(Video video) async {
+    setState(() { _activeTrack = video; _isConnecting = true; });
+    if (!_vault.any((v) => v.id == video.id)) _vault.insert(0, video);
 
     try {
-      await _player.stop();
-      // استخراج المسار الصوتي الأعلى (Highest Bitrate) مباشرة من خوادم البث
+      await _core.stop();
       var manifest = await _yt.videos.streamsClient.getManifest(video.id);
-      var stream = manifest.audioOnly.withHighestBitrate();
+      var streamInfo = manifest.audioOnly.withHighestBitrate();
 
-      // حقن الرابط في المحرك مع تفعيل خاصية التخزين المؤقت العدواني
-      await _player.setAudioSource(
+      await _core.setAudioSource(
         AudioSource.uri(
-          Uri.parse(stream.url.toString()),
+          Uri.parse(streamInfo.url.toString()),
           tag: video.id.toString(),
         ),
         preload: true,
       );
       
-      _player.play();
+      _core.play();
     } catch (e) {
-      debugPrint("ENGINE FAILURE: $e");
+      debugPrint("SYS_ERR: $e");
     } finally {
-      if (mounted) setState(() => _isIgniting = false);
+      if (mounted) setState(() => _isConnecting = false);
     }
   }
 
@@ -86,83 +81,98 @@ class _GodEngineState extends State<GodEngine> {
     return Scaffold(
       body: Stack(
         children: [
-          _buildBackgroundAura(),
-          _renderSector(),
-          if (_activeSignal != null) _buildGodConsole(),
+          _buildVisualBuffer(),
+          _renderActiveLayer(),
+          if (_activeTrack != null) _buildControlPanel(),
         ],
       ),
-      bottomNavigationBar: _buildNav(),
+      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
-  Widget _buildBackgroundAura() {
+  Widget _buildVisualBuffer() {
     return Positioned.fill(
-      child: _activeSignal == null ? Container() : AnimatedOpacity(
-        duration: const Duration(seconds: 3),
-        opacity: 0.15,
-        child: CachedNetworkImage(imageUrl: _activeSignal!.thumbnails.highResUrl, fit: BoxFit.cover),
+      child: _activeTrack == null ? Container() : AnimatedOpacity(
+        duration: const Duration(seconds: 1),
+        opacity: 0.1,
+        child: CachedNetworkImage(imageUrl: _activeTrack!.thumbnails.highResUrl, fit: BoxFit.cover),
       ),
     );
   }
 
-  Widget _buildNav() {
+  Widget _buildBottomNav() {
     return Container(
-      height: 70,
-      color: Colors.black,
+      height: 75,
+      decoration: const BoxDecoration(
+        color: Colors.black,
+        border: Border(top: BorderSide(color: Color(0xFFD4AF37), width: 0.2)),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _navItem(0, "CORE"),
-          _navItem(1, "VAULT"),
+          _navItem(0, Icons.bolt_rounded, "POWER"),
+          _navItem(1, Icons.token_rounded, "ARCHIVE"),
         ],
       ),
     );
   }
 
-  Widget _navItem(int i, String label) {
-    bool active = _sector == i;
+  Widget _navItem(int i, IconData icon, String label) {
+    bool active = _tabIndex == i;
     return GestureDetector(
-      onTap: () => setState(() => _sector = i),
-      child: Text(label, style: TextStyle(color: active ? const Color(0xFFD4AF37) : Colors.white10, fontSize: 12, letterSpacing: 8, fontWeight: FontWeight.bold)),
+      onTap: () => setState(() => _tabIndex = i),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: active ? const Color(0xFFD4AF37) : Colors.white10, size: 28),
+          Text(label, style: TextStyle(color: active ? const Color(0xFFD4AF37) : Colors.white10, fontSize: 8, letterSpacing: 4)),
+        ],
+      ),
     );
   }
 
-  Widget _renderSector() {
-    return _sector == 0 
-      ? DiscoveryView(yt: _yt, onSelect: _ignite) 
-      : HistoryView(data: _history, onSelect: _ignite);
+  Widget _renderActiveLayer() {
+    return _tabIndex == 0 
+      ? DiscoveryLayer(yt: _yt, onTrigger: _fire) 
+      : ArchiveLayer(data: _vault, onTrigger: _fire);
   }
 
-  Widget _buildGodConsole() {
+  Widget _buildControlPanel() {
     return Positioned(
-      bottom: 20, left: 15, right: 15,
+      bottom: 15, left: 10, right: 10,
       child: GestureDetector(
-        onTap: () => _openTerminal(),
+        onTap: () => _openMasterInterface(),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
             child: Container(
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.02),
-                border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.2)),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              height: 75,
+              color: Colors.white.withOpacity(0.02),
+              padding: const EdgeInsets.symmetric(horizontal: 15),
               child: Row(
                 children: [
-                  _isIgniting 
-                    ? const SpinKitDoubleBounce(color: Color(0xFFD4AF37), size: 30)
-                    : CircleAvatar(backgroundImage: CachedNetworkImageProvider(_activeSignal!.thumbnails.lowResUrl), radius: 25),
+                  _isConnecting 
+                    ? const SpinKitThreeBounce(color: Color(0xFFD4AF37), size: 20)
+                    : CircleAvatar(backgroundImage: CachedNetworkImageProvider(_activeTrack!.thumbnails.lowResUrl), radius: 24),
                   const SizedBox(width: 15),
-                  Expanded(child: Text(_activeSignal!.title, maxLines: 1, style: const TextStyle(fontSize: 11, letterSpacing: 1))),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(_activeTrack!.title, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                        const Text("ACTIVE STREAMING PROTOCOL", style: TextStyle(color: Color(0xFFD4AF37), fontSize: 7, letterSpacing: 1.5)),
+                      ],
+                    ),
+                  ),
                   StreamBuilder<PlayerState>(
-                    stream: _player.playerStateStream,
+                    stream: _core.playerStateStream,
                     builder: (context, snap) {
-                      bool p = snap.data?.playing ?? false;
+                      bool isPlaying = snap.data?.playing ?? false;
                       return IconButton(
-                        icon: Icon(p ? Icons.pause_circle_outline : Icons.play_circle_outline, color: const Color(0xFFD4AF37), size: 40),
-                        onPressed: () => p ? _player.pause() : _player.play(),
+                        icon: Icon(isPlaying ? Icons.pause_circle : Icons.play_circle, color: const Color(0xFFD4AF37), size: 40),
+                        onPressed: () => isPlaying ? _core.pause() : _core.play(),
                       );
                     },
                   ),
@@ -175,52 +185,59 @@ class _GodEngineState extends State<GodEngine> {
     );
   }
 
-  void _openTerminal() {
+  void _openMasterInterface() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => TerminalView(player: _player, video: _activeSignal!),
+      builder: (context) => MasterInterface(player: _core, video: _activeTrack!),
     );
   }
 }
 
-class TerminalView extends StatelessWidget {
+class MasterInterface extends StatelessWidget {
   final AudioPlayer player;
   final Video video;
-  const TerminalView({super.key, required this.player, required this.video});
+  const MasterInterface({super.key, required this.player, required this.video});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height,
-      color: Colors.black,
+      color: const Color(0xFF000000),
       child: Stack(
         children: [
-          Positioned.fill(child: CachedNetworkImage(imageUrl: video.thumbnails.highResUrl, fit: BoxFit.cover, opacity: const AlwaysStoppedAnimation(0.25))),
-          BackdropFilter(filter: ImageFilter.blur(sigmaX: 150, sigmaY: 150), child: Container(color: Colors.transparent)),
+          Positioned.fill(child: Opacity(opacity: 0.2, child: CachedNetworkImage(imageUrl: video.thumbnails.highResUrl, fit: BoxFit.cover))),
+          BackdropFilter(filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80), child: Container(color: Colors.transparent)),
           SafeArea(
             child: Column(
               children: [
-                const SizedBox(height: 30),
-                const Icon(Icons.keyboard_arrow_down, color: Color(0xFFD4AF37), size: 30),
+                const SizedBox(height: 20),
+                IconButton(icon: const Icon(Icons.expand_more_rounded, color: Color(0xFFD4AF37), size: 35), onPressed: () => Navigator.pop(context)),
                 const Spacer(),
                 Container(
-                  width: 320, height: 320,
+                  width: 300, height: 300,
                   decoration: BoxDecoration(
-                    border: Border.all(color: const Color(0xFFD4AF37), width: 0.5),
-                    boxShadow: [BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.2), blurRadius: 100)],
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.3)),
                     image: DecorationImage(image: CachedNetworkImageProvider(video.thumbnails.highResUrl), fit: BoxFit.cover),
                   ),
                 ),
                 const Spacer(),
-                Text(video.title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 2)),
-                const SizedBox(height: 10),
-                Text(video.author.toUpperCase(), style: const TextStyle(color: Color(0xFFD4AF37), letterSpacing: 10, fontSize: 12)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Column(
+                    children: [
+                      Text(video.title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                      const SizedBox(height: 10),
+                      Text(video.author.toUpperCase(), style: const TextStyle(color: Color(0xFFD4AF37), letterSpacing: 10, fontSize: 10)),
+                    ],
+                  ),
+                ),
                 const Spacer(),
-                _buildSlider(),
+                _buildProgressBar(),
                 const Spacer(),
-                _buildControls(),
+                _buildPlaybackControls(),
                 const Spacer(flex: 2),
               ],
             ),
@@ -230,18 +247,18 @@ class TerminalView extends StatelessWidget {
     );
   }
 
-  Widget _buildSlider() {
+  Widget _buildProgressBar() {
     return StreamBuilder<Duration>(
       stream: player.positionStream,
       builder: (context, snap) {
         final pos = snap.data ?? Duration.zero;
         final dur = player.duration ?? const Duration(seconds: 1);
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 50),
+          padding: const EdgeInsets.symmetric(horizontal: 40),
           child: Column(
             children: [
               SliderTheme(
-                data: SliderThemeData(trackHeight: 1, thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 0), activeTrackColor: const Color(0xFFD4AF37), inactiveTrackColor: Colors.white10),
+                data: SliderThemeData(trackHeight: 1, thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 4), activeTrackColor: const Color(0xFFD4AF37), inactiveTrackColor: Colors.white12, thumbColor: Colors.white),
                 child: Slider(
                   value: pos.inSeconds.toDouble().clamp(0, dur.inSeconds.toDouble()),
                   max: dur.inSeconds.toDouble(),
@@ -251,8 +268,8 @@ class TerminalView extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(_fmt(pos), style: const TextStyle(color: Colors.white24, fontSize: 10)),
-                  Text(_fmt(dur), style: const TextStyle(color: Colors.white24, fontSize: 10)),
+                  Text(_format(pos), style: const TextStyle(color: Colors.white24, fontSize: 10)),
+                  Text(_format(dur), style: const TextStyle(color: Colors.white24, fontSize: 10)),
                 ],
               )
             ],
@@ -262,101 +279,123 @@ class TerminalView extends StatelessWidget {
     );
   }
 
-  Widget _buildControls() {
+  Widget _buildPlaybackControls() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.fast_rewind, size: 40),
+        const Icon(Icons.shuffle_rounded, color: Colors.white10),
         const SizedBox(width: 40),
+        const Icon(Icons.skip_previous_rounded, size: 50),
+        const SizedBox(width: 25),
         StreamBuilder<PlayerState>(
           stream: player.playerStateStream,
           builder: (context, snap) {
-            bool p = snap.data?.playing ?? false;
+            bool isP = snap.data?.playing ?? false;
             return GestureDetector(
-              onTap: () => p ? player.pause() : player.play(),
+              onTap: () => isP ? player.pause() : player.play(),
               child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: const Color(0xFFD4AF37))),
-                child: Icon(p ? Icons.pause : Icons.play_arrow, color: const Color(0xFFD4AF37), size: 40),
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFD4AF37).withOpacity(0.1), border: Border.all(color: const Color(0xFFD4AF37))),
+                child: Icon(isP ? Icons.pause_rounded : Icons.play_arrow_rounded, color: const Color(0xFFD4AF37), size: 45),
               ),
             );
           },
         ),
+        const SizedBox(width: 25),
+        const Icon(Icons.skip_next_rounded, size: 50),
         const SizedBox(width: 40),
-        const Icon(Icons.fast_forward, size: 40),
+        const Icon(Icons.repeat_one_rounded, color: Colors.white10),
       ],
     );
   }
 
-  String _fmt(Duration d) => "${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}";
+  String _format(Duration d) => "${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}";
 }
 
-class DiscoveryView extends StatefulWidget {
+class DiscoveryLayer extends StatefulWidget {
   final YoutubeExplode yt;
-  final Function(Video) onSelect;
-  const DiscoveryView({super.key, required this.yt, required this.onSelect});
+  final Function(Video) onTrigger;
+  const DiscoveryLayer({super.key, required this.yt, required this.onTrigger});
   @override
-  State<DiscoveryView> createState() => _DiscoveryViewState();
+  State<DiscoveryLayer> createState() => _DiscoveryLayerState();
 }
 
-class _DiscoveryViewState extends State<DiscoveryView> {
-  final TextEditingController _q = TextEditingController();
-  List<Video> _list = [];
-  bool _loading = true;
+class _DiscoveryLayerState extends State<DiscoveryLayer> {
+  final TextEditingController _ctrl = TextEditingController();
+  List<Video> _results = [];
+  bool _isLoading = true;
 
   @override
-  void initState() { super.initState(); _search("Cyberpunk Cinema Music 2026"); }
+  void initState() { super.initState(); _executeSearch("Global Top 100 2026"); }
 
-  void _search(String q) async {
-    setState(() => _loading = true);
-    var res = await widget.yt.search.search(q);
-    setState(() { _list = res.toList(); _loading = false; });
+  void _executeSearch(String q) async {
+    setState(() => _isLoading = true);
+    var search = await widget.yt.search.search(q);
+    setState(() { _results = search.toList(); _isLoading = false; });
   }
 
   @override
   Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        const SliverToBoxAdapter(child: SizedBox(height: 120)),
+        SliverAppBar(
+          expandedHeight: 180, pinned: true, backgroundColor: Colors.black,
+          flexibleSpace: FlexibleSpaceBar(
+            centerTitle: true,
+            title: Text("C E N T", style: GoogleFonts.syne(color: const Color(0xFFD4AF37), fontWeight: FontWeight.w900, letterSpacing: 25, fontSize: 22)),
+          ),
+        ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 50),
+            padding: const EdgeInsets.all(25),
             child: TextField(
-              controller: _q, onSubmitted: _search,
+              controller: _ctrl, onSubmitted: _executeSearch,
               textAlign: TextAlign.center,
-              style: const TextStyle(letterSpacing: 3),
-              decoration: const InputDecoration(hintText: "SEARCH_SYSTEM", border: InputBorder.none, hintStyle: TextStyle(color: Colors.white10)),
+              decoration: InputDecoration(
+                filled: true, fillColor: Colors.white.withOpacity(0.02),
+                hintText: "COMMAND SEARCH",
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+              ),
             ),
           ),
         ),
-        if (_loading) const SliverToBoxAdapter(child: Center(child: SpinKitFadingGrid(color: Color(0xFFD4AF37), size: 50))),
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, i) => ListTile(
-              title: Text(_list[i].title, maxLines: 1, style: const TextStyle(fontSize: 12)),
-              onTap: () => widget.onSelect(_list[i]),
+        if (_isLoading) const SliverToBoxAdapter(child: Center(child: SpinKitPulse(color: Color(0xFFD4AF37), size: 80))),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 150),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, i) => ListTile(
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                leading: ClipRRect(borderRadius: BorderRadius.circular(8), child: CachedNetworkImage(imageUrl: _results[i].thumbnails.lowResUrl, width: 50, height: 50, fit: BoxFit.cover)),
+                title: Text(_results[i].title, maxLines: 1, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                subtitle: Text(_results[i].author, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 9)),
+                onTap: () => widget.onTrigger(_results[i]),
+              ),
+              childCount: _results.length,
             ),
-            childCount: _list.length,
           ),
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 150)),
       ],
     );
   }
 }
 
-class HistoryView extends StatelessWidget {
+class ArchiveLayer extends StatelessWidget {
   final List<Video> data;
-  final Function(Video) onSelect;
-  const HistoryView({super.key, required this.data, required this.onSelect});
+  final Function(Video) onTrigger;
+  const ArchiveLayer({super.key, required this.data, required this.onTrigger});
   @override
   Widget build(BuildContext context) {
     return data.isEmpty 
-      ? const Center(child: Text("VAULT_EMPTY", style: TextStyle(color: Colors.white10, letterSpacing: 10)))
+      ? const Center(child: Text("ARCHIVE_NULL", style: TextStyle(letterSpacing: 10, color: Colors.white10)))
       : ListView.builder(
-          padding: const EdgeInsets.only(top: 150),
+          padding: const EdgeInsets.only(top: 150, left: 20, right: 20),
           itemCount: data.length,
-          itemBuilder: (context, i) => ListTile(title: Text(data[i].title), onTap: () => onSelect(data[i])),
+          itemBuilder: (context, i) => ListTile(
+            leading: const Icon(Icons.shield_rounded, color: Color(0xFFD4AF37)),
+            title: Text(data[i].title, style: const TextStyle(fontSize: 12)),
+            onTap: () => onTrigger(data[i]),
+          ),
         );
   }
 }
