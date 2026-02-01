@@ -10,8 +10,6 @@ import 'dart:ui';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Ultimate Audio Performance Mode
   final session = await AudioSession.instance;
   await session.configure(const AudioSessionConfiguration.music());
   await session.setActive(true);
@@ -58,7 +56,6 @@ class _MainArchitectureState extends State<MainArchitecture> with TickerProvider
   bool _isBuffering = false;
   final List<Video> _vaultHistory = [];
 
-  // THE TITAN ENGINE: Advanced Audio Pumping
   Future<void> _igniteEngine(Video video) async {
     setState(() { 
       _activeTrack = video; 
@@ -69,17 +66,15 @@ class _MainArchitectureState extends State<MainArchitecture> with TickerProvider
     try {
       await _player.stop();
       var manifest = await _yt.videos.streamsClient.getManifest(video.id);
-      
-      // Selecting M4A with Forced Headers for 0% failure rate
       var streamInfo = manifest.audioOnly.where((s) => s.container.name == 'm4a').withHighestBitrate();
 
+      // THE TITAN AUDIO ENGINE - Zero Latency Configuration
       await _player.setAudioSource(
         LockCachingAudioSource(
           Uri.parse(streamInfo.url.toString()),
           headers: {
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
             'Connection': 'keep-alive',
-            'Accept-Encoding': 'identity',
           },
         ),
       );
@@ -87,7 +82,7 @@ class _MainArchitectureState extends State<MainArchitecture> with TickerProvider
       await _player.setVolume(1.0);
       _player.play();
     } catch (e) {
-      debugPrint("ENGINE CRITICAL: $e");
+      debugPrint("CRITICAL ENGINE ERROR: $e");
     } finally {
       if (mounted) setState(() => _isBuffering = false);
     }
@@ -131,8 +126,8 @@ class _MainArchitectureState extends State<MainArchitecture> with TickerProvider
     return Container(
       height: 100,
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.9),
-        border: const Border(top: BorderSide(color: Color(0xFFD4AF37), width: 0.2)),
+        color: Colors.black.withOpacity(0.95),
+        border: const Border(top: BorderSide(color: Color(0xFFD4AF37), width: 0.5)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -150,16 +145,16 @@ class _MainArchitectureState extends State<MainArchitecture> with TickerProvider
       onTap: () => setState(() => _tabIndex = i),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
         decoration: BoxDecoration(
           color: active ? const Color(0xFFD4AF37).withOpacity(0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(25),
+          borderRadius: BorderRadius.circular(30),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: active ? const Color(0xFFD4AF37) : Colors.white24, size: 32),
-            Text(label, style: TextStyle(color: active ? const Color(0xFFD4AF37) : Colors.white24, fontSize: 10, letterSpacing: 3, fontWeight: FontWeight.w900)),
+            Icon(icon, color: active ? const Color(0xFFD4AF37) : Colors.white24, size: 35),
+            Text(label, style: TextStyle(color: active ? const Color(0xFFD4AF37) : Colors.white24, fontSize: 10, letterSpacing: 4, fontWeight: FontWeight.w900)),
           ],
         ),
       ),
@@ -170,26 +165,26 @@ class _MainArchitectureState extends State<MainArchitecture> with TickerProvider
     return Positioned(
       bottom: 25, left: 15, right: 15,
       child: GestureDetector(
-        onTap: () => _showSupremePlayer(),
+        onTap: () => _showPlayer(),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(30),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 60, sigmaY: 60),
+            filter: ImageFilter.blur(sigmaX: 70, sigmaY: 70),
             child: Container(
-              height: 90,
+              height: 95,
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.05),
-                border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.3), width: 0.5),
+                border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.4), width: 1),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
                   _isBuffering 
-                    ? const SpinKitFadingGrid(color: Color(0xFFD4AF37), size: 35)
+                    ? const SpinKitDoubleBounce(color: Color(0xFFD4AF37), size: 40)
                     : Container(
                         padding: const EdgeInsets.all(2),
                         decoration: const BoxDecoration(color: Color(0xFFD4AF37), shape: BoxShape.circle),
-                        child: CircleAvatar(backgroundImage: CachedNetworkImageProvider(_activeTrack!.thumbnails.mediumResUrl), radius: 30),
+                        child: CircleAvatar(backgroundImage: CachedNetworkImageProvider(_activeTrack!.thumbnails.mediumResUrl), radius: 32),
                       ),
                   const SizedBox(width: 15),
                   Expanded(
@@ -197,8 +192,8 @@ class _MainArchitectureState extends State<MainArchitecture> with TickerProvider
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_activeTrack!.title, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        const Text("MASTER QUALITY ACTIVE", style: TextStyle(color: Color(0xFFD4AF37), fontSize: 8, letterSpacing: 2)),
+                        Text(_activeTrack!.title, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, overflow: TextOverflow.ellipsis)),
+                        const Text("CENT ENGINE: MASTER QUALITY", style: TextStyle(color: Color(0xFFD4AF37), fontSize: 8, letterSpacing: 2, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -207,7 +202,7 @@ class _MainArchitectureState extends State<MainArchitecture> with TickerProvider
                     builder: (context, snap) {
                       bool p = snap.data?.playing ?? false;
                       return IconButton(
-                        icon: Icon(p ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded, color: const Color(0xFFD4AF37), size: 50),
+                        icon: Icon(p ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded, color: const Color(0xFFD4AF37), size: 55),
                         onPressed: () => p ? _player.pause() : _player.play(),
                       );
                     },
@@ -221,7 +216,7 @@ class _MainArchitectureState extends State<MainArchitecture> with TickerProvider
     );
   }
 
-  void _showSupremePlayer() {
+  void _showPlayer() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -258,32 +253,32 @@ class _DiscoveryLayerState extends State<DiscoveryLayer> {
     return CustomScrollView(
       slivers: [
         SliverAppBar(
-          expandedHeight: 220, pinned: true, backgroundColor: Colors.black,
+          expandedHeight: 250, pinned: true, backgroundColor: Colors.black,
           flexibleSpace: FlexibleSpaceBar(
             centerTitle: true,
-            title: Text("SUPREME", style: GoogleFonts.orbitron(color: const Color(0xFFD4AF37), fontWeight: FontWeight.w900, letterSpacing: 15)),
+            title: Text("C E N T", style: GoogleFonts.orbitron(color: const Color(0xFFD4AF37), fontWeight: FontWeight.w900, letterSpacing: 20, fontSize: 25)),
           ),
         ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.all(25),
+            padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
             child: TextField(
               controller: _s, onSubmitted: _fetch,
               decoration: InputDecoration(
-                filled: true, fillColor: Colors.white.withOpacity(0.04),
-                hintText: "Access Database...",
+                filled: true, fillColor: Colors.white.withOpacity(0.05),
+                hintText: "Access Cent Database...",
                 prefixIcon: const Icon(Icons.search, color: Color(0xFFD4AF37)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: const BorderSide(color: Colors.white10)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(25), borderSide: const BorderSide(color: Color(0xFFD4AF37))),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: const BorderSide(color: Colors.white10)),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: const BorderSide(color: Color(0xFFD4AF37))),
               ),
             ),
           ),
         ),
-        if (_load) const SliverToBoxAdapter(child: Center(child: SpinKitFoldingCube(color: Color(0xFFD4AF37)))),
+        if (_load) const SliverToBoxAdapter(child: Center(child: SpinKitCubeGrid(color: Color(0xFFD4AF37), size: 60))),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 160),
+          padding: const EdgeInsets.fromLTRB(25, 0, 25, 160),
           sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 0.65, crossAxisSpacing: 20, mainAxisSpacing: 20),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 0.62, crossAxisSpacing: 25, mainAxisSpacing: 25),
             delegate: SliverChildBuilderDelegate(
               (context, i) => GestureDetector(
                 onTap: () => widget.onSelect(_items[i]),
@@ -293,16 +288,16 @@ class _DiscoveryLayerState extends State<DiscoveryLayer> {
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(30),
-                          border: Border.all(color: Colors.white10),
-                          boxShadow: [BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.1), blurRadius: 20)],
+                          borderRadius: BorderRadius.circular(35),
+                          border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.2)),
+                          boxShadow: [BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.15), blurRadius: 25)],
                         ),
-                        child: ClipRRect(borderRadius: BorderRadius.circular(30), child: CachedNetworkImage(imageUrl: _items[i].thumbnails.highResUrl, fit: BoxFit.cover)),
+                        child: ClipRRect(borderRadius: BorderRadius.circular(35), child: CachedNetworkImage(imageUrl: _items[i].thumbnails.highResUrl, fit: BoxFit.cover)),
                       ),
                     ),
                     const SizedBox(height: 15),
-                    Text(_items[i].title, maxLines: 2, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                    Text(_items[i].author, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 9, fontWeight: FontWeight.w900)),
+                    Text(_items[i].title, maxLines: 2, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5)),
+                    Text(_items[i].author, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 2)),
                   ],
                 ),
               ),
@@ -327,36 +322,36 @@ class PlayerScreen extends StatelessWidget {
       body: Stack(
         children: [
           Positioned.fill(child: CachedNetworkImage(imageUrl: video.thumbnails.highResUrl, fit: BoxFit.cover)),
-          BackdropFilter(filter: ImageFilter.blur(sigmaX: 120, sigmaY: 120), child: Container(color: Colors.black.withOpacity(0.88))),
+          BackdropFilter(filter: ImageFilter.blur(sigmaX: 130, sigmaY: 130), child: Container(color: Colors.black.withOpacity(0.9))),
           SafeArea(
             child: Column(
               children: [
                 const SizedBox(height: 20),
-                const Icon(Icons.expand_more_rounded, size: 50, color: Colors.white24),
+                const Icon(Icons.keyboard_arrow_down_rounded, size: 60, color: Colors.white24),
                 const Spacer(),
                 Container(
-                  width: 340, height: 340,
+                  width: 350, height: 350,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(50),
-                    boxShadow: [BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.5), blurRadius: 100, spreadRadius: 5)],
+                    borderRadius: BorderRadius.circular(60),
+                    boxShadow: [BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.6), blurRadius: 120, spreadRadius: 10)],
                   ),
-                  child: ClipRRect(borderRadius: BorderRadius.circular(50), child: CachedNetworkImage(imageUrl: video.thumbnails.highResUrl, fit: BoxFit.cover)),
+                  child: ClipRRect(borderRadius: BorderRadius.circular(60), child: CachedNetworkImage(imageUrl: video.thumbnails.highResUrl, fit: BoxFit.cover)),
                 ),
                 const Spacer(),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 40),
                   child: Column(
                     children: [
-                      Text(video.title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 1)),
-                      const SizedBox(height: 10),
-                      Text(video.author, style: const TextStyle(color: Color(0xFFD4AF37), letterSpacing: 4, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text(video.title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                      const SizedBox(height: 15),
+                      Text(video.author.toUpperCase(), style: const TextStyle(color: Color(0xFFD4AF37), letterSpacing: 6, fontSize: 14, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
                 const Spacer(),
                 _buildDynamicSlider(),
                 const Spacer(),
-                _buildBeastControls(),
+                _buildTitanControls(),
                 const Spacer(flex: 2),
               ],
             ),
@@ -376,11 +371,11 @@ class PlayerScreen extends StatelessWidget {
           children: [
             SliderTheme(
               data: SliderThemeData(
-                trackHeight: 4,
+                trackHeight: 6,
                 thumbColor: const Color(0xFFD4AF37),
                 activeTrackColor: const Color(0xFFD4AF37),
                 inactiveTrackColor: Colors.white10,
-                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
               ),
               child: Slider(
                 value: pos.inSeconds.toDouble().clamp(0, dur.inSeconds.toDouble()),
@@ -389,12 +384,12 @@ class PlayerScreen extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 45),
+              padding: const EdgeInsets.symmetric(horizontal: 50),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(_fmt(pos), style: const TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.bold)),
-                  Text(_fmt(dur), style: const TextStyle(color: Colors.white38, fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text(_fmt(pos), style: const TextStyle(color: Colors.white30, fontSize: 13, fontWeight: FontWeight.bold)),
+                  Text(_fmt(dur), style: const TextStyle(color: Colors.white30, fontSize: 13, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -404,13 +399,13 @@ class PlayerScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBeastControls() {
+  Widget _buildTitanControls() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.shuffle_rounded, color: Color(0xFFD4AF37), size: 30),
+        const Icon(Icons.shuffle_rounded, color: Color(0xFFD4AF37), size: 35),
         const SizedBox(width: 30),
-        const Icon(Icons.skip_previous_rounded, size: 60),
+        const Icon(Icons.skip_previous_rounded, size: 70),
         const SizedBox(width: 20),
         StreamBuilder<PlayerState>(
           stream: player.playerStateStream,
@@ -419,21 +414,21 @@ class PlayerScreen extends StatelessWidget {
             return GestureDetector(
               onTap: () => p ? player.pause() : player.play(),
               child: Container(
-                padding: const EdgeInsets.all(28),
+                padding: const EdgeInsets.all(30),
                 decoration: const BoxDecoration(
                   color: Color(0xFFD4AF37),
                   shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Color(0xFFD4AF37), blurRadius: 30)],
+                  boxShadow: [BoxShadow(color: Color(0xFFD4AF37), blurRadius: 40, spreadRadius: 2)],
                 ),
-                child: Icon(p ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.black, size: 55),
+                child: Icon(p ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.black, size: 65),
               ),
             );
           },
         ),
         const SizedBox(width: 20),
-        const Icon(Icons.skip_next_rounded, size: 60),
+        const Icon(Icons.skip_next_rounded, size: 70),
         const SizedBox(width: 30),
-        const Icon(Icons.repeat_one_rounded, color: Color(0xFFD4AF37), size: 30),
+        const Icon(Icons.repeat_one_rounded, color: Color(0xFFD4AF37), size: 35),
       ],
     );
   }
@@ -448,33 +443,36 @@ class VaultLayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(30),
+      padding: const EdgeInsets.all(35),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 70),
-          Text("THE VAULT", style: GoogleFonts.orbitron(fontSize: 40, fontWeight: FontWeight.w900, color: const Color(0xFFD4AF37), letterSpacing: 12)),
-          const Text("ENCRYPTED AUDIO ARCHIVE", style: TextStyle(fontSize: 10, letterSpacing: 6, color: Colors.white24)),
-          const SizedBox(height: 40),
+          const SizedBox(height: 80),
+          Text("CENT VAULT", style: GoogleFonts.orbitron(fontSize: 45, fontWeight: FontWeight.w900, color: const Color(0xFFD4AF37), letterSpacing: 15)),
+          const Text("TOTAL SECURE ARCHIVE", style: TextStyle(fontSize: 12, letterSpacing: 8, color: Colors.white24, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 50),
           Expanded(
-            child: ListView.builder(
-              itemCount: items.length,
-              itemBuilder: (context, i) => Container(
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.03),
-                  borderRadius: BorderRadius.circular(20),
+            child: items.isEmpty 
+              ? const Center(child: Text("ARCHIVE IS EMPTY", style: TextStyle(color: Colors.white10, letterSpacing: 10)))
+              : ListView.builder(
+                  itemCount: items.length,
+                  itemBuilder: (context, i) => Container(
+                    margin: const EdgeInsets.only(bottom: 25),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.04),
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.1)),
+                    ),
+                    child: ListTile(
+                      onTap: () => onSelect(items[i]),
+                      contentPadding: const EdgeInsets.all(20),
+                      leading: ClipRRect(borderRadius: BorderRadius.circular(15), child: Image.network(items[i].thumbnails.lowResUrl)),
+                      title: Text(items[i].title, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      subtitle: Text(items[i].author.toUpperCase(), style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 11, letterSpacing: 2)),
+                      trailing: const Icon(Icons.security_rounded, color: Color(0xFFD4AF37), size: 25),
+                    ),
+                  ),
                 ),
-                child: ListTile(
-                  onTap: () => onSelect(items[i]),
-                  contentPadding: const EdgeInsets.all(15),
-                  leading: ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(items[i].thumbnails.lowResUrl)),
-                  title: Text(items[i].title, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  subtitle: Text(items[i].author, style: const TextStyle(color: Color(0xFFD4AF37), fontSize: 10)),
-                  trailing: const Icon(Icons.verified_user_rounded, color: Color(0xFFD4AF37), size: 20),
-                ),
-              ),
-            ),
           ),
         ],
       ),
