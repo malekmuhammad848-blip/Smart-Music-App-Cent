@@ -54,6 +54,7 @@ android {
     }
 
     lintOptions {
+        disable 'InvalidPackage'
         checkReleaseBuilds false
         abortOnError false
     }
@@ -76,4 +77,5 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'com.google.android.exoplayer:exoplayer:2.19.1'
+    implementation 'androidx.media:media:1.7.0'
 }
