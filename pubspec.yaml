@@ -1,5 +1,6 @@
 name: cent_music
-description: CENT Music Streaming Platform
+description: "CENT Music Streaming Platform - High Performance Edition"
+# The version follows Semantic Versioning (SemVer)
 version: 1.0.0+1
 
 environment:
@@ -9,17 +10,38 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
+  
+  # Professional Media & Video handling
+  # Updated to 2.2.2+ for better stream stability
   youtube_explode_dart: ^2.2.2
-  youtube_player_flutter: ^8.1.2
+  
+  # Critical: Ensure this is 9.0.0 or higher for Android 14 compatibility
+  youtube_player_flutter: ^9.0.0
+  
+  # Professional storage and caching
   shared_preferences: ^2.2.2
-  cached_network_image: ^3.3.0
-  flutter_inappwebview: 5.8.0
+  cached_network_image: ^3.3.1
+  
+  # Fixed the version to 6.0.0 to fix the 'Namespace' error from your logs
+  flutter_inappwebview: ^6.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  # High-standard linting for cleaner code
+  flutter_lints: ^3.0.1
 
 flutter:
   uses-material-design: true
+  
+  # Optimization: Added assets management placeholders
+  assets:
+    - assets/images/
+    # - assets/icons/
+
+  # Professional fonts configuration if needed
+  # fonts:
+  #   - family: MainFont
+  #     fonts:
+  #       - asset: assets/fonts/MainFont-Regular.ttf
   
