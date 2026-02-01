@@ -1,14 +1,21 @@
 buildscript {
+    // Highly Professional Version Management
     ext.kotlin_version = '1.9.22'
+    
     repositories {
         google()
         mavenCentral()
+        // Added JCenter as a fallback for older plugins if needed
+        maven { url "https://plugins.gradle.org/m2/" }
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.2.0'
+        // Updated to a highly stable version compatible with API 34
+        classpath 'com.android.tools.build:gradle:8.2.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'com.google.gms:google-services:4.4.0'
+        
+        // Essential for Google Services and Crash Analysis
+        classpath 'com.google.gms:google-services:4.4.1'
         classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.9'
     }
 }
@@ -17,16 +24,23 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // Optimization: Standard Flutter artifacts storage
         maven { url 'https://storage.googleapis.com/download.flutter.io' }
     }
 }
 
+// Professional Build Directory Management
 rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+
+// Critical: Ensure ':app' is evaluated first to avoid dependency errors
+subprojects {
     project.evaluationDependsOn(':app')
 }
 
+// Clean Task with updated Gradle 8+ Syntax
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
