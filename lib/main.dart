@@ -84,6 +84,7 @@ class _MainArchitectureState extends State<MainArchitecture> {
               artUri: Uri.parse(video.thumbnails.highResUrl),
             ),
           ),
+          preload: true,
         );
         _player.play();
       }
@@ -95,7 +96,7 @@ class _MainArchitectureState extends State<MainArchitecture> {
           _player.play();
         }
       } catch (err) {
-        debugPrint("CRITICAL_ENGINE_FAILURE: $err");
+        debugPrint(err.toString());
       }
     } finally {
       if (mounted) setState(() => _isBuffering = false);
@@ -430,3 +431,4 @@ class EngineLayer extends StatelessWidget {
     );
   }
 }
+
