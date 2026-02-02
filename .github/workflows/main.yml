@@ -1,4 +1,4 @@
-name: Android CI/CD Build
+name: Cent Supreme Build Engine
 
 on:
   push:
@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -27,18 +28,21 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Terminal Operations
+      - name: System Preparation & Auto Fix
         run: |
           flutter clean
-          flutter pub upgrade
           flutter pub get
+          dart format .
+          flutter analyze --fatal-infos || true
 
-      - name: Build APK
-        run: flutter build apk --release --no-tree-shake-icons
+      - name: Build Android Release APK
+        run: |
+          flutter build apk --release --no-tree-shake-icons --build-number=${{ github.run_number }}
 
-      - name: Upload APK Artifact
+      - name: Upload Cent Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk
+          name: Cent-Release-V${{ github.run_number }}
           path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 7
           
