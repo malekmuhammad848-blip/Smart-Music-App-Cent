@@ -1,20 +1,40 @@
 name: cent
-description: Cent Music App
+description: Cent Music - Smart Music Streaming App
 version: 1.0.0+1
 publish_to: 'none'
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
+  # لا تضيف flutter constraint هنا
 
 dependencies:
   flutter:
     sdk: flutter
   
+  # الحزم الأساسية لمحرك الصوت - إصدارات متوافقة مع Flutter 3.19.0
   just_audio: ^0.9.36
   audio_session: ^0.1.18
-  youtube_explode_dart: ^2.2.2
-  provider: ^6.1.1
+  rxdart: ^0.27.7
+  
+  # مكتبات الواجهة والتصميم
+  google_fonts: ^6.1.0
   cupertino_icons: ^1.0.6
+  flutter_spinkit: ^5.2.0
+  cached_network_image: ^3.3.0
+  
+  # مكتبات النظام
+  path_provider: ^2.1.2
+  permission_handler: ^11.3.1
+  crypto: ^3.0.3
+  
+  # مكتبات اليوتيوب
+  youtube_explode_dart: ^2.2.2
+  
+  # إدارة الحالة
+  provider: ^6.1.1
+  
+  # حزمة http للشبكة
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:
@@ -23,3 +43,14 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  
+  # ⚠️ إذا كنت لا تملك ملف الخط، احذف هذا القسم:
+  # fonts:
+  #   - family: Michroma
+  #     fonts:
+  #       - asset: fonts/Michroma-Regular.ttf
+  
+  # يمكنك إضافة أصول إذا كانت موجودة
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/
