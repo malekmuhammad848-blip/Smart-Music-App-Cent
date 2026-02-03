@@ -1,4 +1,4 @@
-name: Cent Sovereign Build
+name: Cent Master Build System
 
 on:
   push:
@@ -21,28 +21,28 @@ jobs:
         with:
           flutter-version: '3.19.0'
 
-      - name: Total System Takeover
+      - name: System Overhaul
         run: |
-          # 1. جلب المكتبات لتظهر في الـ Cache
+          # 1. جلب المكتبات أولاً لتثبيتها في الـ Cache
           flutter pub get || true 
           
-          # 2. تشغيل المحرك الذي سيحقن الإعدادات في كل المكتبات
-          python3 omega_fixer.py
+          # 2. تشغيل المصلح الشامل لحقن القيم في المكتبات
+          python3 master_fixer.py
           
-          # 3. إعادة بناء هيكل cent وحقن الـ properties في كل مكان
+          # 3. إعادة إنشاء هيكل cent وفرض الهوية
           rm -rf android pubspec.lock
           flutter create . --platforms android --project-name cent
           
-          # حقن المسارات في المشروع الرئيسي والمكتبات الفرعية
+          # حقن إعدادات النظام يدوياً
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
           echo "flutter.sdk=$FLUTTER_ROOT" >> android/local.properties
-          cp android/local.properties . 
           
           flutter pub get
           dart fix --apply
 
-      - name: Final Execution
+      - name: Ultimate Execution
         run: |
+          # بناء الـ APK مع تجاهل كافة الأخطاء والتحذيرات
           flutter build apk --release \
             --no-tree-shake-icons \
             --extra-front-end-options=--no-sound-null-safety
@@ -50,6 +50,6 @@ jobs:
       - name: Upload Victory APK
         uses: actions/upload-artifact@v4
         with:
-          name: Cent-Sovereign-Success
+          name: Cent-Master-APK
           path: build/app/outputs/flutter-apk/*.apk
           
