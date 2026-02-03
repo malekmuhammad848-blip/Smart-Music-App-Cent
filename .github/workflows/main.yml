@@ -1,4 +1,4 @@
-name: Cent Master Build System
+name: Cent Hyper-Sovereign Build
 
 on:
   push:
@@ -21,35 +21,35 @@ jobs:
         with:
           flutter-version: '3.19.0'
 
-      - name: System Overhaul
+      - name: Hyper-Surgical Execution
         run: |
-          # 1. جلب المكتبات أولاً لتثبيتها في الـ Cache
-          flutter pub get || true 
+          # جلب المكتبات لتثبيتها في الـ Cache قبل الجراحة
+          flutter pub get || true
           
-          # 2. تشغيل المصلح الشامل لحقن القيم في المكتبات
-          python3 master_fixer.py
+          # تشغيل المصلح الفائق لتعديل كود المكتبات يدوياً
+          python3 hyper_fixer.py
           
-          # 3. إعادة إنشاء هيكل cent وفرض الهوية
+          # إعادة إنشاء الهوية cent وتجاوز أخطاء النظام
           rm -rf android pubspec.lock
           flutter create . --platforms android --project-name cent
           
-          # حقن إعدادات النظام يدوياً
+          # حقن المسارات النهائية
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
           echo "flutter.sdk=$FLUTTER_ROOT" >> android/local.properties
           
           flutter pub get
           dart fix --apply
 
-      - name: Ultimate Execution
+      - name: Ultimate Victory Build
         run: |
-          # بناء الـ APK مع تجاهل كافة الأخطاء والتحذيرات
+          # بناء الـ APK متجاهلاً كل التحذيرات وبأقصى قوة معالجة
           flutter build apk --release \
             --no-tree-shake-icons \
             --extra-front-end-options=--no-sound-null-safety
 
-      - name: Upload Victory APK
+      - name: Upload Success Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Cent-Master-APK
+          name: Cent-Ultimate-Victory-APK
           path: build/app/outputs/flutter-apk/*.apk
           
