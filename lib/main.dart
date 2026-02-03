@@ -103,13 +103,17 @@ class _MainSovereignScreenState extends State<MainSovereignScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(15),
             image: const DecorationImage(image: NetworkImage("https://picsum.photos/200"), fit: BoxFit.cover),
+            // نضيف تراكب تدرجي فوق الصورة
+            gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [Colors.black.withOpacity(0.8), Colors.transparent],
+            ),
           ),
-          child: Container(
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(15), gradient: LinearGradient(begin: Alignment.bottomCenter, colors: [Colors.black.withOpacity(0.8), Colors.transparent])),
-            alignment: Alignment.bottomLeft,
-            padding: const EdgeInsets.all(10),
-            child: const Text("Recent Track", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-          ),
+          // محتوًى العنصر
+          alignment: Alignment.bottomLeft,
+          padding: const EdgeInsets.all(10),
+          child: const Text("Recent Track", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
         ),
       ),
     );
@@ -128,7 +132,7 @@ class _MainSovereignScreenState extends State<MainSovereignScreen> {
         child: const Row(
           children: [
             Padding(padding: EdgeInsets.all(8.0), child: Icon(Icons.trending_up, color: Color(0xFFD4AF37))),
-            Text("Trending #1"),
+            Text("Trending #1", style: TextStyle(color: Colors.white)),
           ],
         ),
       ),
@@ -182,7 +186,8 @@ class _MainSovereignScreenState extends State<MainSovereignScreen> {
               ),
               child: Row(
                 children: [
-                  const CircleAvatar(radius: 25, backgroundImage: NetworkImage("https://picsum.photos/100")),
+                  // لا نضع const هنا لأن NetworkImage ليست const
+                  CircleAvatar(radius: 25, backgroundImage: NetworkImage("https://picsum.photos/100")),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
