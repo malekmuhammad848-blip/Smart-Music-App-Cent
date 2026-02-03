@@ -3,12 +3,6 @@ name: Build Flutter APK
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-
-env:
-  FLUTTER_VERSION: '3.19.0'
-  JAVA_VERSION: '17'
 
 jobs:
   build:
@@ -22,22 +16,19 @@ jobs:
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: ${{ env.JAVA_VERSION }}
+        java-version: '17'
 
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: ${{ env.FLUTTER_VERSION }}
+        flutter-version: '3.19.0'
 
-    # إصلاح الصلاحيات والمسارات قبل أي شيء
-    - name: Fix Permissions and SDK Path
-      run: |
-        chmod +x android/gradlew
-        echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
-        echo "flutter.sdk=$FLUTTER_ROOT" >> android/local.properties
+    # هذه الخطوة ستقوم بتوليد ملفات gradle المفقودة دون حذف مجلد android
+    - name: Repair Android Project Files
+      run: flutter create . --platforms android
 
     - name: Run surgical fix script
-      run: python3 "project_sovereign.py" .
+      run: python3 project_sovereign.py .
 
     - name: Get dependencies
       run: flutter pub get
