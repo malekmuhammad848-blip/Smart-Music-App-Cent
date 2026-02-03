@@ -23,19 +23,30 @@ jobs:
       with:
         flutter-version: '3.19.0'
 
-    # استخدام اسم مشروع متوافق مع قوانين Dart
-    - name: Repair Android Project Files
-      run: flutter create . --platforms android --project-name smart_music_app
+    # الحل الجذري: تنظيف مخلفات Gradle السابقة وبناء هيكل جديد نظيف
+    - name: Clean and Rebuild Android Structure
+      run: |
+        rm -rf android/
+        flutter create . --platforms android --project-name smart_music_app
 
-    - name: Run surgical fix script
+    # تشغيل ملف البايثون الجراحي لإصلاح الـ 50 ألف سطر
+    - name: Run Surgical Fix
       run: python3 project_sovereign.py .
 
-    - name: Get dependencies
-      run: flutter pub get
+    - name: Get Dependencies
+      run: |
+        flutter pub cache clean -f
+        flutter pub get
 
     - name: Build APK
       run: |
         flutter build apk --release \
           --no-tree-shake-icons \
           --extra-front-end-options=--no-sound-null-safety
-          
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-apk
+        path: build/app/outputs/flutter-apk/app-release.apk
+        
