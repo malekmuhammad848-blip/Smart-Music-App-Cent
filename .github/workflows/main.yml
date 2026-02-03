@@ -28,12 +28,16 @@ jobs:
       uses: subosito/flutter-action@v2
       with:
         flutter-version: ${{ env.FLUTTER_VERSION }}
-        cache: true
-        cache-key: flutter-${{ env.FLUTTER_VERSION }}
-        cache-path: ${{ runner.tool_cache }}/flutter
 
-    - name: Run fix script
-      run: python3 project_sovereign.py .
+    # إصلاح الصلاحيات والمسارات قبل أي شيء
+    - name: Fix Permissions and SDK Path
+      run: |
+        chmod +x android/gradlew
+        echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+        echo "flutter.sdk=$FLUTTER_ROOT" >> android/local.properties
+
+    - name: Run surgical fix script
+      run: python3 "project_sovereign.py" .
 
     - name: Get dependencies
       run: flutter pub get
@@ -43,3 +47,4 @@ jobs:
         flutter build apk --release \
           --no-tree-shake-icons \
           --extra-front-end-options=--no-sound-null-safety
+          
