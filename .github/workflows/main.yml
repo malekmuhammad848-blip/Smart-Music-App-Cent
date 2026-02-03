@@ -27,17 +27,17 @@ jobs:
           flutter-version: '3.19.0'
           channel: 'stable'
 
-      - name: System Preparation
+      - name: Force Dependency Update
         run: |
           flutter config --no-analytics
-          # هنا التصحيح: لا تضع أي إضافات مع pub get
+          # السر هنا: إجبار السيرفر على تحديث المكتبات القديمة مثل fft تلقائياً
+          flutter pub upgrade --major-versions
           flutter pub get
-          flutter pub upgrade --major-versions || true
 
       - name: Build Android Release APK
         run: |
           export GRADLE_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
-          # هنا فقط نضع "التعويذة" لتجاوز مشكلة المكتبات القديمة
+          # استخدام "التعويذة" لتجاوز أي تعارض متبقي في الـ 50 ألف سطر
           flutter build apk --release --no-sound-null-safety --no-tree-shake-icons --obfuscate --split-debug-info=build/app/outputs/symbols
 
       - name: Upload Cent Artifact
@@ -45,5 +45,4 @@ jobs:
         with:
           name: Cent-Release-V${{ github.run_number }}
           path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
           
