@@ -187,7 +187,7 @@ class SurgicalSovereign:
 # Do not modify manually
 
 sdk.dir=/usr/local/lib/android/sdk
-flutter.sdk=/opt/hostedtoolcache/flutter/stable-3.19.0-x64
+flutter.sdk=/opt/hostedtoolcache/flutter/stable-3.38.9-x64
 """
             
             with open(local_props_path, 'w', encoding='utf-8') as f:
