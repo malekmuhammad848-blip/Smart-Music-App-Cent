@@ -1,4 +1,4 @@
-name: Ultimate Purge & Build
+name: Global Sovereign Build System
 
 on:
   push:
@@ -9,43 +9,44 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - name: Setup Java 17 & Flutter
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.0'
 
-      - name: Run Nuclear Purger
-        # تشغيل الجراح الذي سيصلح حتى ملفات الـ Cache الخارجية
+      - name: Total Reconstruction
         run: |
-          flutter pub get
-          python3 ultimate_purger.py
-
-      - name: Force System Alignment
-        run: |
-          # إعادة بناء الأندرويد من الصفر لضمان نقاء الهوية cent
+          # تنظيف وجلب المكتبات أولاً ليتسنى للمصلح الوصول للـ Cache
+          flutter pub get || true 
+          python3 global_fixer.py
+          
+          # إعادة إنشاء الأندرويد لضمان نقاء الهوية cent
           rm -rf android pubspec.lock
           flutter create . --platforms android --project-name cent
+          
+          # حقن مسارات النظام في كل مكان
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
           echo "flutter.sdk=$FLUTTER_ROOT" >> android/local.properties
-          
-          # حقن النسخ يدوياً في الملف الرئيسي
-          sed -i 's/compileSdkVersion .*/compileSdkVersion 34/' android/app/build.gradle
           
           flutter pub get
           dart fix --apply
 
-      - name: The Final Victory Build
+      - name: Final Execution
         run: |
           flutter build apk --release \
             --no-tree-shake-icons \
             --extra-front-end-options=--no-sound-null-safety
 
-      - name: Deployment
+      - name: Upload Victory APK
         uses: actions/upload-artifact@v4
         with:
-          name: Cent-Nuclear-Success
+          name: Cent-Sovereign-APK
           path: build/app/outputs/flutter-apk/*.apk
           
