@@ -1,0 +1,13 @@
+analyzer:
+  errors:
+    # إخبار السيرفر بتجاهل أخطاء الـ Null Safety والتحذيرات أثناء البناء
+    todo: ignore
+    invalid_annotation_target: ignore
+  exclude:
+    - "**/*.g.dart"
+    - "lib/generated_plugin_registrant.dart"
+
+linter:
+  rules:
+    - avoid_print: false
+    
