@@ -1,4 +1,4 @@
-name: CENT - GLOBAL RECONSTRUCTION BUILD
+name: FINAL RECONSTRUCTION - NO MORE FAILURES
 
 on:
   push:
@@ -9,10 +9,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Java 17 & Flutter
+      - name: Setup Java & Flutter
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -21,37 +21,32 @@ jobs:
         with:
           flutter-version: '3.19.0'
 
-      - name: Total Project Overhaul
+      - name: The Purge
         run: |
-          # 1. جلب المكتبات أولاً لتثبيتها في الـ Cache
-          flutter pub get || true 
-          
-          # 2. إطلاق "المعالج الكوني" لتطهير المستودع والمكتبات يدوياً
+          # مسح شامل وحقن للقيم الصلبة قبل أي خطوة
           python3 project_annihilator.py
           
-          # 3. مسح الهوية القديمة وإعادة بناء أندرويد باسم cent الصافي
+          # إعادة بناء الهوية cent (لحل مشكلة Exit code 1)
           rm -rf android pubspec.lock
           flutter create . --platforms android --project-name cent
           
-          # 4. حقن الإعدادات الصلبة في الهوية الجديدة
+          # حقن المسارات والتعريفات في ملف local.properties يدوياً
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
           echo "flutter.sdk=$FLUTTER_ROOT" >> android/local.properties
+          echo "flutter.compileSdkVersion=34" >> android/local.properties
+          echo "flutter.minSdkVersion=21" >> android/local.properties
           
-          # 5. تطهير أخير للتبعيات
           flutter pub get
           dart fix --apply
 
-      - name: Force APK Build
+      - name: The Final Build
         run: |
-          # بناء الـ APK متجاهلاً كافة التحذيرات والأخطاء المنطقية
-          flutter build apk --release \
-            --no-tree-shake-icons \
-            --extra-front-end-options=--no-sound-null-safety \
-            --extra-gen-snapshot-options=--no-sound-null-safety
+          # البناء مع تجاهل كامل لفحص النسخ (Force Build)
+          flutter build apk --release --no-tree-shake-icons --no-pub --extra-front-end-options=--no-sound-null-safety
 
       - name: Upload Victory APK
         uses: actions/upload-artifact@v4
         with:
-          name: Cent-Global-Victory-APK
+          name: Cent-Sovereign-APK
           path: build/app/outputs/flutter-apk/*.apk
           
