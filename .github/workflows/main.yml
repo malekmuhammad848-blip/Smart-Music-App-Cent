@@ -3,6 +3,7 @@ name: Build Cent Supreme APK
 on:
   push:
     branches: [ main, master ]
+  workflow_dispatch:  # للتفعيل اليدوي
 
 jobs:
   build:
@@ -22,31 +23,32 @@ jobs:
       uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.19.0'
+        channel: 'stable'
 
-    # خطوة التأكد من الصلاحيات لملف البايثون
-    - name: Prepare Scripts
-      run: chmod +x project_sovereign.py
-
-    # تشغيل ملف البايثون الجراحي (مهم جداً لفحص الكود الجديد والقديم وحقن minSdkVersion)
+    # تشغيل الإصلاح الجراحي
     - name: Run Sovereign Surgical Fix
       run: python3 project_sovereign.py .
+
+    # إنشاء local.properties للمسارات الصحيحة
+    - name: Create local.properties for CI
+      run: |
+        echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+        echo "flutter.sdk=$FLUTTER_ROOT" >> android/local.properties
+        echo "flutter.versionName=1.0.0" >> android/local.properties
+        echo "flutter.versionCode=1" >> android/local.properties
 
     - name: Get Dependencies
       run: |
         flutter pub get
-        # نستخدم هذه الخطوة لضمان مطابقة النسخ في الملفات التي عدلناها
         flutter pub upgrade
 
     - name: Build APK
       run: |
-        # بناء الـ APK مع تعطيل القيود التي قد تسببها بقايا الملفات المحذوفة
         flutter build apk --release \
-          --no-tree-shake-icons \
-          --extra-front-end-options=--no-sound-null-safety
+          --no-tree-shake-icons
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: Cent-Supreme-Release
         path: build/app/outputs/flutter-apk/app-release.apk
-        
