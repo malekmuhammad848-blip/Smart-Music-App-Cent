@@ -28,21 +28,14 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Emergency Fix & Master Fixer
-        # هذا الجزء هو المسؤول عن سحق الخطأ 69 الذي ظهر في صورتك
+      - name: Global Repository Auto-Repair
+        # هذا الأمر يكتسح المستودع بالكامل ويصلح كل ملفات المشروع برمجياً
         run: |
-          # 1. حذف المكتبة المسببة للفشل من ملف pubspec فوراً
-          sed -i '/cent_app:/d' pubspec.yaml
-          
-          # 2. حذف أي استدعاء داخل الـ 50 ألف سطر للمكتبة المفقودة
-          find . -name "*.dart" -exec sed -i '/import.*cent_app.*/d' {} +
-          
-          # 3. تشغيل ملف المصلح الخارجي
           chmod +x fixer.sh
           ./fixer.sh
 
-      - name: Build Android Release APK
-        # استخدام أوامر التخطّي القوية لضمان عدم توقف المحرك
+      - name: Build Unstoppable Android APK
+        # استخدام خيارات الحقن المباشر لسحق أخطاء الـ Null Safety في الـ 50 ألف سطر
         run: |
           export GRADLE_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
           flutter build apk --release \
@@ -50,10 +43,10 @@ jobs:
             --extra-front-end-options=--no-sound-null-safety \
             --extra-gen-snapshot-options=--no-sound-null-safety
 
-      - name: Upload Cent Artifact
+      - name: Upload Finished Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Cent-Release-V${{ github.run_number }}
+          name: Cent-Global-Fixed-V${{ github.run_number }}
           path: build/app/outputs/flutter-apk/*.apk
           if-no-files-found: error
           
