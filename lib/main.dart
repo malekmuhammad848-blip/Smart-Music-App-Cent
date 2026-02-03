@@ -2,267 +2,213 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'core/audio_kernel.dart';
 
-void main() {
-  runApp(const CentApp());
-}
+void main() => runApp(const CentApp());
 
 class CentApp extends StatelessWidget {
   const CentApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Cent Music',
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        primaryColor: const Color(0xFFD4AF37), // اللون الذهبي الملكي
-        scaffoldBackgroundColor: const Color(0xFF050505), // أسود فاخر
+      theme: ThemeData.dark().copyWith(
+        primaryColor: const Color(0xFFD4AF37),
+        scaffoldBackgroundColor: const Color(0xFF000000),
       ),
-      home: const SovereignPlayer(),
+      home: const MainSovereignScreen(),
     );
   }
 }
 
-class SovereignPlayer extends StatefulWidget {
-  const SovereignPlayer({super.key});
-
+class MainSovereignScreen extends StatefulWidget {
+  const MainSovereignScreen({super.key});
   @override
-  State<SovereignPlayer> createState() => _SovereignPlayerState();
+  State<MainSovereignScreen> createState() => _MainSovereignScreenState();
 }
 
-class _SovereignPlayerState extends State<SovereignPlayer> with SingleTickerProviderStateMixin {
-  final AudioKernel _kernel = AudioKernel(); // استدعاء المحرك الماسي من ديب سيك
-  int _currentIndex = 0;
+class _MainSovereignScreenState extends State<MainSovereignScreen> {
+  final AudioKernel _kernel = AudioKernel();
+  int _selectedTab = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // الخلفية المتدرجة
-          _buildBackground(),
-          
-          SafeArea(
-            child: Column(
-              children: [
-                _buildTopBar(),
-                _buildSearchBar(),
-                Expanded(
-                  child: IndexedStack(
-                    index: _currentIndex,
-                    children: [
-                      _buildHomeContent(),
-                      _buildSearchPlaceholder(),
-                      _buildLibraryPlaceholder(),
-                    ],
-                  ),
-                ),
-                _buildBottomPlayerBar(),
-              ],
-            ),
+          IndexedStack(
+            index: _selectedTab,
+            children: [
+              _buildHomeTab(),
+              _buildSearchTab(),
+              _buildFavoritesTab(),
+            ],
           ),
+          // المشغل العائم (مثل تطبيقات الموسيقى العالمية)
+          Positioned(bottom: 0, left: 0, right: 0, child: _buildGlobalMiniPlayer()),
         ],
       ),
       bottomNavigationBar: _buildBottomNav(),
     );
   }
 
-  Widget _buildBackground() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: RadialGradient(
-          center: Alignment(0.7, -0.6),
-          radius: 1.5,
-          colors: [Color(0xFF1A1200), Color(0xFF050505)],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopBar() {
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Column(
+  // --- واجهة الصفحة الرئيسية (التريندات وآخر المسموع) ---
+  Widget _buildHomeTab() {
+    return CustomScrollView(
+      slivers: [
+        _buildSliverAppBar(),
+        SliverToBoxAdapter(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("WELCOME TO", style: TextStyle(color: Color(0xFFD4AF37), fontSize: 12, letterSpacing: 2)),
-              Text("CENT", style: TextStyle(fontSize: 32, fontWeight: FontWeight.black, letterSpacing: 4)),
+              _buildSectionTitle("Recently Played"),
+              _buildRecentList(), // آخر الأغاني
+              _buildSectionTitle("Global Trending"),
+              _buildTrendingGrid(), // التريندات
+              const SizedBox(height: 120), // مساحة للمشغل السفلي
             ],
           ),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFD4AF37), width: 1),
-            ),
-            child: const Icon(Icons.person_outline, color: Color(0xFFD4AF37)),
-          )
-        ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSliverAppBar() {
+    return const SliverAppBar(
+      expandedHeight: 120,
+      backgroundColor: Colors.black,
+      flexibleSpace: FlexibleSpaceBar(
+        titlePadding: EdgeInsets.only(left: 20, bottom: 16),
+        title: Text("CENT SUPREME", style: TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold, letterSpacing: 2)),
       ),
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(15),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+      padding: const EdgeInsets.all(20),
+      child: Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+    );
+  }
+
+  // قائمة "آخر الأغاني"
+  Widget _buildRecentList() {
+    return SizedBox(
+      height: 180,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        itemCount: 5,
+        itemBuilder: (context, i) => Container(
+          width: 140,
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            image: const DecorationImage(image: NetworkImage("https://picsum.photos/200"), fit: BoxFit.cover),
+          ),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15),
-            height: 55,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
-            ),
-            child: const TextField(
-              decoration: InputDecoration(
-                icon: Icon(Icons.search, color: Color(0xFFD4AF37)),
-                hintText: "Search your supreme music...",
-                hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
-                border: InputBorder.none,
-              ),
-            ),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(15), gradient: LinearGradient(begin: Alignment.bottomCenter, colors: [Colors.black.withOpacity(0.8), Colors.transparent])),
+            alignment: Alignment.bottomLeft,
+            padding: const EdgeInsets.all(10),
+            child: const Text("Recent Track", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildHomeContent() {
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
+  // شبكة "التريندات"
+  Widget _buildTrendingGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 15, crossAxisSpacing: 15, childAspectRatio: 1.5),
+      itemCount: 4,
+      itemBuilder: (context, i) => Container(
+        decoration: BoxDecoration(color: const Color(0xFF111111), borderRadius: BorderRadius.circular(15), border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.2))),
+        child: const Row(
+          children: [
+            Padding(padding: EdgeInsets.all(8.0), child: Icon(Icons.trending_up, color: Color(0xFFD4AF37))),
+            Text("Trending #1"),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- واجهة البحث ---
+  Widget _buildSearchTab() {
+    return SafeArea(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 20),
-          _buildSectionHeader("Visualizer Feed"),
-          _buildLiveVisualizer(),
-          _buildSectionHeader("Trending Now"),
-          _buildTrendingList(),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: TextField(
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: const Color(0xFF111111),
+                prefixIcon: const Icon(Icons.search, color: Color(0xFFD4AF37)),
+                hintText: "Search artist, songs...",
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+              ),
+            ),
+          ),
+          const Expanded(child: Center(child: Text("Search Engine Ready"))),
         ],
       ),
     );
   }
 
-  Widget _buildLiveVisualizer() {
-    return StreamBuilder<AudioVisualizationData>(
-      stream: _kernel.visualizationStream,
-      builder: (context, snapshot) {
-        final data = snapshot.data?.magnitudes ?? List.filled(40, 0.1);
-        return Container(
-          height: 200,
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.black,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.3)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: data.take(30).map((m) {
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 100),
-                width: 6,
-                height: 30 + (140 * m),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFD4AF37), Color(0xFFB8860B)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(color: const Color(0xFFD4AF37).withOpacity(0.2 * m), blurRadius: 5, spreadRadius: 1)
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        );
-      },
-    );
+  // --- واجهة المفضلة ---
+  Widget _buildFavoritesTab() {
+    return const Center(child: Text("Your Golden Collection", style: TextStyle(color: Color(0xFFD4AF37))));
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-      child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFFD4AF37))),
-    );
-  }
-
-  Widget _buildTrendingList() {
-    return SizedBox(
-      height: 220,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 15),
-        itemCount: 5,
-        itemBuilder: (context, index) {
-          return Container(
-            width: 160,
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(20),
-              image: const DecorationImage(
-                image: NetworkImage("https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=500"),
-                fit: BoxFit.cover,
-                opacity: 0.5,
-              ),
-            ),
-            child: const Center(child: Icon(Icons.play_circle_fill, size: 50, color: Color(0xFFD4AF37))),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildBottomPlayerBar() {
+  // --- المشغل العالمي (Mini-Player) ---
+  Widget _buildGlobalMiniPlayer() {
     return StreamBuilder<AudioTrack?>(
       stream: _kernel.currentTrackStream,
       builder: (context, snapshot) {
-        return Container(
-          margin: const EdgeInsets.all(15),
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1A1A1A),
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.5)),
-          ),
-          child: Row(
-            children: [
-              const CircleAvatar(backgroundColor: Color(0xFFD4AF37), child: Icon(Icons.music_note, color: Colors.black)),
-              const SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(snapshot.data?.title ?? "Idle Mode", style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text(snapshot.data?.artist ?? "Cent Audio Engine", style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                  ],
-                ),
+        return ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              height: 80,
+              margin: const EdgeInsets.all(10),
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1A1A).withOpacity(0.9),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.4)),
               ),
-              StreamBuilder<AudioState>(
-                stream: _kernel.stateStream,
-                builder: (context, snap) {
-                  final playing = snap.data == AudioState.playing;
-                  return IconButton(
-                    icon: Icon(playing ? Icons.pause_circle_filled : Icons.play_circle_filled, color: const Color(0xFFD4AF37), size: 35),
-                    onPressed: () => playing ? _kernel.pause() : _kernel.play(),
-                  );
-                },
+              child: Row(
+                children: [
+                  const CircleAvatar(radius: 25, backgroundImage: NetworkImage("https://picsum.photos/100")),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(snapshot.data?.title ?? "Select Track", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text(snapshot.data?.artist ?? "Cent Music", style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                  IconButton(icon: const Icon(Icons.skip_previous), onPressed: () => _kernel.previous()),
+                  StreamBuilder<AudioState>(
+                    stream: _kernel.stateStream,
+                    builder: (context, s) {
+                      final isPlaying = s.data == AudioState.playing;
+                      return IconButton(
+                        icon: Icon(isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled, size: 40, color: const Color(0xFFD4AF37)),
+                        onPressed: () => isPlaying ? _kernel.pause() : _kernel.play(),
+                      );
+                    },
+                  ),
+                  IconButton(icon: const Icon(Icons.skip_next), onPressed: () => _kernel.next()),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
@@ -271,21 +217,15 @@ class _SovereignPlayerState extends State<SovereignPlayer> with SingleTickerProv
 
   Widget _buildBottomNav() {
     return BottomNavigationBar(
-      currentIndex: _currentIndex,
-      onTap: (i) => setState(() => _currentIndex = i),
+      currentIndex: _selectedTab,
+      onTap: (i) => setState(() => _selectedTab = i),
       backgroundColor: Colors.black,
       selectedItemColor: const Color(0xFFD4AF37),
-      unselectedItemColor: Colors.grey,
-      showUnselectedLabels: false,
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: "Home"),
-        BottomNavigationBarItem(icon: Icon(Icons.explore), label: "Discover"),
-        BottomNavigationBarItem(icon: Icon(Icons.library_music), label: "Library"),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+        BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
+        BottomNavigationBarItem(icon: Icon(Icons.favorite), label: "Favorites"),
       ],
     );
   }
-
-  Widget _buildSearchPlaceholder() => const Center(child: Text("Global Audio Search Engine"));
-  Widget _buildLibraryPlaceholder() => const Center(child: Text("Supreme Collection"));
 }
-
