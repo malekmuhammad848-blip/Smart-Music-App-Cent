@@ -23,13 +23,13 @@ jobs:
       with:
         flutter-version: '3.19.0'
 
-    # الحل الجذري: تنظيف مخلفات Gradle السابقة وبناء هيكل جديد نظيف
-    - name: Clean and Rebuild Android Structure
+    # مسح المجلد المعطوب وبناء واحد جديد تماماً باسم متوافق
+    - name: Nuclear Clean & Fresh Android
       run: |
         rm -rf android/
         flutter create . --platforms android --project-name smart_music_app
 
-    # تشغيل ملف البايثون الجراحي لإصلاح الـ 50 ألف سطر
+    # تشغيل الجراح لإعادة حقن minSdkVersion 21 في المجلد الجديد
     - name: Run Surgical Fix
       run: python3 project_sovereign.py .
 
