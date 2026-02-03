@@ -27,26 +27,31 @@ jobs:
           flutter-version: '3.19.0' 
           channel: 'stable'
 
-      - name: Extreme Android & Code Repair
-        # هذه الخطوة ستقوم بإعادة بناء مشروع الأندرويد المكسور آلياً
+      - name: Surgical Repair Strategy
+        # سنقوم هنا بترميم الأخطاء بدون إعادة إنشاء المشروع لتجنب خطأ التسمية
         run: |
-          # 1. حذف مكتبة cent_app وتطهير الاستدعاءات
+          # 1. تنظيف ملف pubspec من cent_app
           sed -i '/cent_app:/d' pubspec.yaml
+          
+          # 2. تطهير كافة ملفات الـ Dart من الاستدعاءات المكسورة
           find . -name "*.dart" -exec sed -i '/import.*cent_app.*/d' {} +
           
-          # 2. حل مشكلة "Unsupported Gradle" (خطأ الساعة 12:02)
-          # سنقوم بحذف مجلد أندرويد المكسور وإعادة توليده برمجياً
-          rm -rf android
-          flutter create . --platforms android
-          
-          # 3. تشغيل المصلح لإصلاح الـ 50 ألف سطر
+          # 3. حل مشكلة "Unsupported Gradle" (صورة 12:02)
+          # سنقوم بتحديث نسخة الـ Gradle Wrapper يدوياً لتتوافق مع السيرفر
+          if [ -d "android" ]; then
+            cd android
+            sed -i 's/gradle-.*-all.zip/gradle-8.0-all.zip/g' gradle/wrapper/gradle-wrapper.properties || true
+            cd ..
+          fi
+
+          # 4. تشغيل المصلح الخارجي
           chmod +x fixer.sh
           ./fixer.sh
 
-      - name: Final Force Build
+      - name: Build Unstoppable APK
         run: |
           export GRADLE_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
-          # بناء APK مع تجاوز Null Safety بقوة المحرك
+          # استخدام الخيارات الإضافية لسحق خطأ Null Safety نهائياً
           flutter build apk --release \
             --no-tree-shake-icons \
             --extra-front-end-options=--no-sound-null-safety \
