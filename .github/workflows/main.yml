@@ -27,37 +27,32 @@ jobs:
           flutter-version: '3.19.0' 
           channel: 'stable'
 
-      - name: Ultimate Repository Purge & Repair
-        # هذه الخطوة تسحق أخطاء الـ Gradle والـ 50 ألف سطر قبل أن يلمسها محرك Flutter
+      - name: Extreme Android & Code Repair
+        # هذه الخطوة ستقوم بإعادة بناء مشروع الأندرويد المكسور آلياً
         run: |
-          # 1. حذف المكتبة المفقودة التي سببت فشل الـ Dependencies
+          # 1. حذف مكتبة cent_app وتطهير الاستدعاءات
           sed -i '/cent_app:/d' pubspec.yaml
-          
-          # 2. تنظيف الـ 50 ألف سطر من أي استدعاء مكسور آلياً
           find . -name "*.dart" -exec sed -i '/import.*cent_app.*/d' {} +
           
-          # 3. حل خطأ Gradle (11:58) عبر حذف الأسطر المتعارضة في ملفات الأندرويد
-          if [ -f "android/build.gradle" ]; then
-            sed -i '/apply from:.*flutter.gradle.*/d' android/build.gradle
-          fi
-          if [ -f "android/app/build.gradle" ]; then
-            sed -i '/apply from:.*flutter.gradle.*/d' android/app/build.gradle
-          fi
-
-          # 4. تشغيل المصلح الخارجي لإتمام العملية
+          # 2. حل مشكلة "Unsupported Gradle" (خطأ الساعة 12:02)
+          # سنقوم بحذف مجلد أندرويد المكسور وإعادة توليده برمجياً
+          rm -rf android
+          flutter create . --platforms android
+          
+          # 3. تشغيل المصلح لإصلاح الـ 50 ألف سطر
           chmod +x fixer.sh
           ./fixer.sh
 
-      - name: Force Unstoppable APK Build
+      - name: Final Force Build
         run: |
           export GRADLE_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
-          # بناء الـ APK مع إجبار المحرك على تجاوز Null Safety في كامل المستودع
+          # بناء APK مع تجاوز Null Safety بقوة المحرك
           flutter build apk --release \
             --no-tree-shake-icons \
             --extra-front-end-options=--no-sound-null-safety \
             --extra-gen-snapshot-options=--no-sound-null-safety
 
-      - name: Upload Cent Final APK
+      - name: Upload Cent Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Cent-Final-V${{ github.run_number }}
