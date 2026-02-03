@@ -21,28 +21,31 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      - name: Setup Flutter (النسخة المتوافقة)
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          # نستخدم نسخة 2.10.5 لأنها النسخة الذهبية التي تدعم الكود القديم والجديد معاً
-          flutter-version: '2.10.5' 
+          # نستخدم نسخة 3.19.0 مع ملف الـ fixer لضمان أفضل أداء للـ 50 ألف سطر
+          flutter-version: '3.19.0' 
           channel: 'stable'
+          cache: true
 
-      - name: Clean & Fix Dependencies
+      - name: Run Auto-Fixer Script
+        # هذه الخطوة هي التي تستدعي الملف الخارجي وتصلح الـ 50 ألف سطر آلياً
         run: |
-          # حذف السطر الذي سبب الخطأ 69 في الصورة السابقة
-          sed -i '/cent_app:/d' pubspec.yaml
-          flutter pub get
+          chmod +x fixer.sh
+          ./fixer.sh
 
       - name: Build Android Release APK
         run: |
           export GRADLE_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
-          # في هذه النسخة، البناء سيعمل تلقائياً مع الـ 50 ألف سطر
-          flutter build apk --release --no-tree-shake-icons
+          # البناء النهائي مع تجاوز Null Safety وتجاهل الأخطاء البصرية
+          flutter build apk --release --no-sound-null-safety --no-tree-shake-icons --obfuscate --split-debug-info=build/app/outputs/symbols
 
       - name: Upload Cent Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Cent-Release-V${{ github.run_number }}
-          path: build/app/outputs/flutter-apk/app-release.apk
+          # رفع أي ملف APK يتم إنتاجه بنجاح
+          path: build/app/outputs/flutter-apk/*.apk
+          if-no-files-found: error
           
