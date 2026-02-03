@@ -96,8 +96,8 @@ class AudioKernel {
   final _errorController = StreamController<String>.broadcast();
   
   // Playlist management
-  final _playlist = ListQueue<AudioTrack>();
-  final _originalPlaylist = ListQueue<AudioTrack>();
+final List<AudioTrack> _playlist = [];
+final List<AudioTrack> _originalPlaylist = [];
   int _currentIndex = -1;
   RepeatMode _repeatMode = RepeatMode.none;
   bool _shuffleEnabled = false;
@@ -153,7 +153,7 @@ class AudioKernel {
       
       // Error handling
       _primaryPlayer.playbackEventStream
-          .where((event) => event.state == ja.ProcessingState.idle)
+          .where((event) => event.processingState == ja.ProcessingState.idle)
           .listen((_) => _setState(AudioState.idle));
       
       // Start visualization timer
@@ -922,20 +922,3 @@ class FFTProcessor {
     return windowed;
   }
 }
-
-// ============================================
-// MAIN EXPORT
-// ============================================
-
-// Export key components
-export 'audio_kernel.dart' show
-  AudioKernel,
-  AudioTrack,
-  PlaybackPosition,
-  AudioState,
-  RepeatMode,
-  CachePolicy,
-  AudioVisualizationData,
-  PlaybackQueue,
-  AudioCacheManager,
-  FFTProcessor;
