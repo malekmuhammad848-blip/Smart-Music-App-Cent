@@ -10,9 +10,9 @@ dependencies:
   flutter:
     sdk: flutter
   
-  # المكتبات الأساسية لمحرك الصوت
-  just_audio: ^0.10.5  # ⚠️ تم التحديث من 0.9.36
-  audio_session: ^0.2.2  # ⚠️ تم التحديث من 0.1.18
+  # المكتبات الأساسية - إصدارات متوافقة مع Dart 3.3.0
+  just_audio: ^0.9.36  # ⚠️ ابقى على الإصدار القديم
+  audio_session: ^0.1.18  # ⚠️ ابقى على الإصدار القديم
   rxdart: ^0.27.7
   
   # مكتبات الواجهة والتصميم
@@ -21,13 +21,15 @@ dependencies:
   flutter_spinkit: ^5.2.0
   cached_network_image: ^3.3.0
   
-  # مكتبات النظام ومعالجة البيانات
+  # مكتبات النظام
   path_provider: ^2.1.2
   crypto: ^3.0.3
   permission_handler: ^11.3.1
   
-  # مكتبات إضافية
-  youtube_explode_dart: ^2.5.3  # ⚠️ تم التحديث من 2.2.2
+  # مكتبات اليوتيوب
+  youtube_explode_dart: ^2.2.2  # ⚠️ ابقى على 2.2.2
+  
+  # إدارة الحالة
   provider: ^6.1.1
 
 dev_dependencies:
@@ -37,8 +39,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
-  # إزالة قسم الخطوط إذا لم يكن الملف موجوداً
+  # احذف قسم الخطوط إذا لا يوجد ملف
   # fonts:
   #   - family: Michroma
   #     fonts:
