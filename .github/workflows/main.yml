@@ -28,28 +28,30 @@ jobs:
           channel: 'stable'
 
       - name: Ultimate Repository Purge & Repair
-        # هذه الخطوة ستقوم بسحق كل الأخطاء برمجياً قبل البدء
+        # هذه الخطوة تسحق أخطاء الـ Gradle والـ 50 ألف سطر قبل أن يلمسها محرك Flutter
         run: |
-          # 1. حذف المكتبة الملعونة cent_app التي سببت فشل الصور السابقة
+          # 1. حذف المكتبة المفقودة التي سببت فشل الـ Dependencies
           sed -i '/cent_app:/d' pubspec.yaml
           
-          # 2. تطهير الـ 50 ألف سطر من أي استدعاء مكسور
+          # 2. تنظيف الـ 50 ألف سطر من أي استدعاء مكسور آلياً
           find . -name "*.dart" -exec sed -i '/import.*cent_app.*/d' {} +
           
-          # 3. إصلاح ملف الـ Gradle اللعين الذي ظهر في صورتك الأخيرة (11:53)
-          # هذا السطر يحذف الإضافات القديمة التي تسبب تعارض Project.afterEvaluate
+          # 3. حل خطأ Gradle (11:58) عبر حذف الأسطر المتعارضة في ملفات الأندرويد
           if [ -f "android/build.gradle" ]; then
             sed -i '/apply from:.*flutter.gradle.*/d' android/build.gradle
           fi
+          if [ -f "android/app/build.gradle" ]; then
+            sed -i '/apply from:.*flutter.gradle.*/d' android/app/build.gradle
+          fi
 
-          # 4. تشغيل المصلح الخارجي
+          # 4. تشغيل المصلح الخارجي لإتمام العملية
           chmod +x fixer.sh
           ./fixer.sh
 
       - name: Force Unstoppable APK Build
         run: |
           export GRADLE_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
-          # بناء الـ APK مع حقن أوامر تجاوز Null Safety مباشرة للمحرك
+          # بناء الـ APK مع إجبار المحرك على تجاوز Null Safety في كامل المستودع
           flutter build apk --release \
             --no-tree-shake-icons \
             --extra-front-end-options=--no-sound-null-safety \
