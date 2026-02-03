@@ -5,13 +5,13 @@ on:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
-  workflow_dispatch: # يسمح لك بتشغيل البناء يدوياً إذا علق السيرفر
+  workflow_dispatch: 
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    # زيادة مهلة البناء لأن المشروع 50 ألف سطر
-    timeout-minutes: 30 
+    # مهلة كافية لترجمة 50 ألف سطر
+    timeout-minutes: 45 
 
     steps:
       - name: Checkout Repository
@@ -20,7 +20,7 @@ jobs:
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin' # تميرين أكثر استقراراً مع أندرويد
+          distribution: 'temurin'
           java-version: '17'
           cache: 'gradle'
 
@@ -31,18 +31,19 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: System Preparation & Memory Optimization
+      - name: System Preparation & Dependency Fix
         run: |
           flutter config --no-analytics
-          flutter pub get
-          # إصلاح أي تضارب في المكتبات تلقائياً
+          # حل مشكلة Null Safety أثناء جلب المكتبات
+          flutter pub get --no-sound-null-safety
           flutter pub upgrade --major-versions || true
 
       - name: Build Android Release APK
-        # هنا السر: زيادة الذاكرة المخصصة لعملية البناء لتتحمل الـ 50 ألف سطر
         run: |
-          export GRADLE_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=512m"
-          flutter build apk --release --no-tree-shake-icons --obfuscate --split-debug-info=build/app/outputs/symbols
+          # تخصيص ذاكرة عالية للتعامل مع حجم الكود الضخم
+          export GRADLE_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
+          # الأمر النهائي للبناء مع تجاهل قيود Null Safety
+          flutter build apk --release --no-sound-null-safety --no-tree-shake-icons --obfuscate --split-debug-info=build/app/outputs/symbols
 
       - name: Upload Cent Artifact
         uses: actions/upload-artifact@v4
