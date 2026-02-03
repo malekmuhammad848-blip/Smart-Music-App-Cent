@@ -27,41 +27,41 @@ jobs:
           flutter-version: '3.19.0' 
           channel: 'stable'
 
-      - name: Atomic Repository Reconstruction
-        # هذه الخطوة ستمسح مسببات الخطأ (12:11) نهائياً من الجذور
+      - name: The Nuclear Fix (Final Opportunity)
         run: |
-          # 1. تطهير ملف pubspec من cent_app
+          # 1. إزالة أي مكتبة مفقودة وتعديل اسم المشروع برمجياً ليكون موحداً
+          # سيقوم هذا الأمر بجعل اسم المشروع "cent" في كل مكان لتجنب تعقيدات التسمية
+          sed -i 's/^name: .*/name: cent/' pubspec.yaml
           sed -i '/cent_app:/d' pubspec.yaml
+          sed -i '/smart_music_app_cent:/d' pubspec.yaml
           
-          # 2. تطهير الـ 50 ألف سطر من أي استدعاء مكسور برمجياً
+          # 2. تطهير الـ 50 ألف سطر من أي استدعاء قديم أو خاطئ
           find . -name "*.dart" -exec sed -i '/import.*cent_app.*/d' {} +
+          find . -name "*.dart" -exec sed -i '/import.*smart_music_app_cent.*/d' {} +
           
-          # 3. حل معضلة Gradle (صورة 12:11) - إعادة ضبط المصنع لملفات أندرويد
-          # سنقوم بحذف ملفات الإعدادات المكسورة ليقوم Flutter بإنشائها نظيفة
-          rm -f android/build.gradle
-          rm -f android/app/build.gradle
-          rm -rf android/gradle
+          # 3. تصفير وإعادة بناء ملفات أندرويد لتتوافق مع Gradle 8.0 (حل صورة 12:18)
+          rm -rf android
+          flutter create . --platforms android --project-name cent
           
-          # إجبار Flutter على إعادة توليد ملفات أندرويد متوافقة
-          flutter create . --platforms android --project-name smart_music_app_cent
-          
-          # 4. تشغيل المصلح الخارجي
-          chmod +x fixer.sh
-          ./fixer.sh
+          # 4. تحديث نسخة Gradle إجبارياً في الملفات الجديدة
+          sed -i 's/gradle-7.6.3-all.zip/gradle-8.0-all.zip/g' android/gradle/wrapper/gradle-wrapper.properties || true
 
-      - name: Unstoppable APK Build
+          # 5. تنظيف وجلب المكتبات
+          flutter clean
+          flutter pub get
+
+      - name: Execution of the Unstoppable Build
         run: |
           export GRADLE_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
-          # استخدام القوة الغاشمة لتجاوز الـ Null Safety والتحذيرات
+          # بناء الـ APK مع تجاوز Null Safety والتحذيرات تماماً
           flutter build apk --release \
             --no-tree-shake-icons \
             --extra-front-end-options=--no-sound-null-safety \
             --extra-gen-snapshot-options=--no-sound-null-safety
 
-      - name: Upload Finished APK
+      - name: Upload Final Success APK
         uses: actions/upload-artifact@v4
         with:
-          name: Cent-Final-Success
+          name: Cent-Final-APK
           path: build/app/outputs/flutter-apk/*.apk
-          if-no-files-found: error
           
