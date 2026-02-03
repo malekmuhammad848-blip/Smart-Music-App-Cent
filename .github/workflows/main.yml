@@ -1,4 +1,4 @@
-name: Cent Ultimate Sovereign Build
+name: Cent Sovereign Absolute Build
 
 on:
   push:
@@ -21,19 +21,19 @@ jobs:
         with:
           flutter-version: '3.19.0'
 
-      - name: Global Nuclear Execution
+      - name: Ultimate Sovereign Execution
         run: |
           # جلب المكتبات لتثبيتها في الـ Cache قبل الجراحة
           flutter pub get || true 
           
-          # تشغيل المصلح الذي سيقوم بكيّ المكتبات المتمردة برمجياً
-          python3 nuclear_fixer.py
+          # تشغيل الجزار التقني لتعديل كود المكتبات يدوياً
+          python3 ultimate_nuclear_fixer.py
           
-          # إعادة إنشاء هيكل الأندرويد لضمان نقاء الهوية cent
+          # إعادة إنشاء الهوية cent وتجاوز أخطاء النظام
           rm -rf android pubspec.lock
           flutter create . --platforms android --project-name cent
           
-          # حقن مسارات النظام يدوياً في الملفات الجديدة
+          # حقن المسارات النهائية بالقوة
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
           echo "flutter.sdk=$FLUTTER_ROOT" >> android/local.properties
           
@@ -42,15 +42,15 @@ jobs:
 
       - name: The Final Victory Build
         run: |
-          # بناء الـ APK متجاهلاً كل التحذيرات والأخطاء المنطقية
+          # بناء الـ APK متجاهلاً كل التحذيرات والأخطاء وبأقصى قوة
           flutter build apk --release \
             --no-tree-shake-icons \
             --extra-front-end-options=--no-sound-null-safety \
             --extra-gen-snapshot-options=--no-sound-null-safety
 
-      - name: Upload Victory Artifact
+      - name: Upload Victory APK
         uses: actions/upload-artifact@v4
         with:
-          name: Cent-Sovereign-APK
+          name: Cent-Master-APK
           path: build/app/outputs/flutter-apk/*.apk
           
