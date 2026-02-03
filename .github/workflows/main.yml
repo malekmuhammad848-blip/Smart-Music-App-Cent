@@ -23,9 +23,9 @@ jobs:
       with:
         flutter-version: '3.19.0'
 
-    # هذه الخطوة ستقوم بتوليد ملفات gradle المفقودة دون حذف مجلد android
+    # استخدام اسم مشروع متوافق مع قوانين Dart
     - name: Repair Android Project Files
-      run: flutter create . --platforms android
+      run: flutter create . --platforms android --project-name smart_music_app
 
     - name: Run surgical fix script
       run: python3 project_sovereign.py .
