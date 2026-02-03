@@ -1,4 +1,4 @@
-name: Global Sovereign Build System
+name: Cent Sovereign Build
 
 on:
   push:
@@ -21,19 +21,22 @@ jobs:
         with:
           flutter-version: '3.19.0'
 
-      - name: Total Reconstruction
+      - name: Total System Takeover
         run: |
-          # تنظيف وجلب المكتبات أولاً ليتسنى للمصلح الوصول للـ Cache
+          # 1. جلب المكتبات لتظهر في الـ Cache
           flutter pub get || true 
-          python3 global_fixer.py
           
-          # إعادة إنشاء الأندرويد لضمان نقاء الهوية cent
+          # 2. تشغيل المحرك الذي سيحقن الإعدادات في كل المكتبات
+          python3 omega_fixer.py
+          
+          # 3. إعادة بناء هيكل cent وحقن الـ properties في كل مكان
           rm -rf android pubspec.lock
           flutter create . --platforms android --project-name cent
           
-          # حقن مسارات النظام في كل مكان
+          # حقن المسارات في المشروع الرئيسي والمكتبات الفرعية
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
           echo "flutter.sdk=$FLUTTER_ROOT" >> android/local.properties
+          cp android/local.properties . 
           
           flutter pub get
           dart fix --apply
@@ -47,6 +50,6 @@ jobs:
       - name: Upload Victory APK
         uses: actions/upload-artifact@v4
         with:
-          name: Cent-Sovereign-APK
+          name: Cent-Sovereign-Success
           path: build/app/outputs/flutter-apk/*.apk
           
