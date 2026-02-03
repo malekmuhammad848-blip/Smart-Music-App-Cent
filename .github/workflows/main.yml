@@ -8,62 +8,41 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60 
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Java 17
+      - name: Setup Java & Flutter
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.0' 
-          channel: 'stable'
+          flutter-version: '3.19.0'
 
-      - name: Surgical Override & System Injection
+      - name: Run Global Smart Fixer
         run: |
-          # 1. تصفير شامل وحذف أي أثر للمكتبة الملعونة cent_app
-          rm -f pubspec.lock
-          sed -i '/cent_app/d' pubspec.yaml
-          sed -i 's/^name: .*/name: cent/' pubspec.yaml
-          
-          # 2. حقن تعريفات وهمية لإسكات أخطاء الـ Compilation (حل صورة 12:43)
-          # سنقوم بتعطيل السطور التي تسبب الانهيار برمجياً
-          find . -name "*.dart" -exec sed -i 's/VisualComplexityLevel/dynamic/g' {} +
-          find . -name "*.dart" -exec sed -i 's/ThemePalette/dynamic/g' {} +
-          find . -name "*.dart" -exec sed -i 's/await Future.wait(/Future.wait([] || /g' {} +
-          find . -name "*.dart" -exec sed -i 's/visualComplexity: dynamic.high/visualComplexity: null/g' {} +
-          find . -name "*.dart" -exec sed -i 's/await _persistApplicationState();//g' {} +
-          
-          # 3. إعادة بناء هيكل الأندرويد وحقن مسارات النظام
+          chmod +x fixer.sh
+          ./fixer.sh
+
+      - name: Final Authentic Build
+        run: |
+          # إعادة إنشاء بيئة الأندرويد لضمان التوافق التام
           rm -rf android
           flutter create . --platforms android --project-name cent
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
           echo "flutter.sdk=$FLUTTER_ROOT" >> android/local.properties
           
-          # 4. جلب المكتبات وتجاوز فحص النسخ
-          flutter pub get
-
-      - name: The Final Execution (Force Build)
-        run: |
-          export GRADLE_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
-          # استخدام خيار تجاهل الأخطاء القاتلة في الواجهة الأمامية
+          # البناء بالقوة القصوى
           flutter build apk --release \
             --no-tree-shake-icons \
             --extra-front-end-options=--no-sound-null-safety \
             --extra-gen-snapshot-options=--no-sound-null-safety
 
-      - name: Upload Final Success APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Cent-Final-Result
+          name: Cent-Fixed-APK
           path: build/app/outputs/flutter-apk/*.apk
-          if-no-files-found: error
           
