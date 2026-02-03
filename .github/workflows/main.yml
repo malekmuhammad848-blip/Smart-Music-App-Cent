@@ -24,24 +24,31 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          # رفعنا النسخة لضمان استقرار الأدوات مع الـ 50 ألف سطر
+          # استخدام نسخة مستقرة تدعم أدوات الإصلاح الحديثة
           flutter-version: '3.19.0' 
           channel: 'stable'
+          cache: true
 
-      - name: Run Auto-Fixer Script
+      - name: Run Master Fixer Script
+        # تشغيل ملف fixer.sh الذي يصلح الـ 50 ألف سطر آلياً قبل البناء
         run: |
           chmod +x fixer.sh
           ./fixer.sh
 
       - name: Build Android Release APK
-        # الخدعة هنا: إرسال الأمر للـ Gradle مباشرة لتخطي فحص Flutter للخيارات
+        # استخدام الخيارات الإضافية (Extra Options) لتجاوز خطأ "Option not found" في صورتك
         run: |
           export GRADLE_OPTS="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
-          flutter build apk --release --no-tree-shake-icons --extra-front-end-options=--no-sound-null-safety --extra-gen-snapshot-options=--no-sound-null-safety
+          flutter build apk --release \
+            --no-tree-shake-icons \
+            --extra-front-end-options=--no-sound-null-safety \
+            --extra-gen-snapshot-options=--no-sound-null-safety
 
       - name: Upload Cent Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Cent-Release-V${{ github.run_number }}
+          # البحث عن أي ملف APK تم إنتاجه بنجاح لضمان عدم ظهور تحذير "No files found"
           path: build/app/outputs/flutter-apk/*.apk
+          if-no-files-found: error
           
