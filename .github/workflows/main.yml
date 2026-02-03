@@ -1,4 +1,4 @@
-name: Cent Sovereign Absolute Build
+name: CENT - ABSOLUTE POWER BUILD
 
 on:
   push:
@@ -9,10 +9,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Force Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Java 17 & Flutter
+      - name: Force Setup Java & Flutter
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -21,36 +21,36 @@ jobs:
         with:
           flutter-version: '3.19.0'
 
-      - name: Ultimate Sovereign Execution
+      - name: The Great Purge Execution
         run: |
-          # جلب المكتبات لتثبيتها في الـ Cache قبل الجراحة
+          # جلب المكتبات لتثبيتها في الـ Cache قبل إبادتها
           flutter pub get || true 
           
-          # تشغيل الجزار التقني لتعديل كود المكتبات يدوياً
-          python3 ultimate_nuclear_fixer.py
+          # تشغيل المحرق الشامل لحقن القيم في السيرفر
+          python3 ultimate_annihilator.py
           
-          # إعادة إنشاء الهوية cent وتجاوز أخطاء النظام
+          # مسح هيكل الأندرويد وإعادة خلقه من العدم باسم cent
           rm -rf android pubspec.lock
           flutter create . --platforms android --project-name cent
           
-          # حقن المسارات النهائية بالقوة
+          # حقن المسارات الصلبة في قلب المشروع الجديد
           echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
           echo "flutter.sdk=$FLUTTER_ROOT" >> android/local.properties
           
           flutter pub get
           dart fix --apply
 
-      - name: The Final Victory Build
+      - name: The Final Victory (No Mercy Build)
         run: |
-          # بناء الـ APK متجاهلاً كل التحذيرات والأخطاء وبأقصى قوة
+          # البناء بأقصى قوة مع سحق كافة القيود والتحذيرات
           flutter build apk --release \
             --no-tree-shake-icons \
             --extra-front-end-options=--no-sound-null-safety \
             --extra-gen-snapshot-options=--no-sound-null-safety
 
-      - name: Upload Victory APK
+      - name: Deliver The Sovereign APK
         uses: actions/upload-artifact@v4
         with:
-          name: Cent-Master-APK
+          name: Cent-Ultimate-APK
           path: build/app/outputs/flutter-apk/*.apk
           
