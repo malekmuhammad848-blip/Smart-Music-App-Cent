@@ -20,7 +20,7 @@ apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
     namespace "com.cent.music"
-    compileSdkVersion 35
+    compileSdkVersion 34
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -37,38 +37,19 @@ android {
 
     defaultConfig {
         applicationId "com.cent.music"
-        // minSdkVersion 23 لضمان عمل محركات الصوت والفيزياء المتقدمة
-        minSdkVersion 23
-        targetSdkVersion 35
+        minSdkVersion 21
+        targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        
-        // تفعيل MultiDex ضروري جداً لتطبيقات الـ 50 ألف سطر
         multiDexEnabled true
     }
 
     buildTypes {
         release {
             signingConfig signingConfigs.debug
-            // تفعيل التحسينات لتقليل حجم التطبيق النهائي
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
-
-    lintOptions {
-        disable 'InvalidPackage'
-        checkReleaseBuilds false
-        abortOnError false
-    }
-
-    packagingOptions {
-        resources {
-            excludes += '/META-INF/{AL2.0,LGPL2.1}'
-            excludes += '/META-INF/DEPENDENCIES'
-            excludes += '/META-INF/LICENSE*'
-            excludes += '/META-INF/NOTICE*'
         }
     }
 }
@@ -80,11 +61,5 @@ flutter {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     implementation 'androidx.multidex:multidex:2.0.1'
-    
-    // دعم تشغيل الوسائط في الخلفية والتحكم من شاشة القفل
-    implementation 'androidx.media:media:1.7.0'
-    implementation 'com.google.android.exoplayer:exoplayer:2.19.1'
-    
-    // دعم فك التشفير الصوتي المتقدم
-    implementation 'com.google.android.exoplayer:extension-mediasession:2.19.1'
+    implementation 'androidx.media:media:1.6.0'
 }
