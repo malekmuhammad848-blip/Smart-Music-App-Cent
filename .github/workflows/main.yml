@@ -1,4 +1,4 @@
-name: Build Flutter APK
+name: Build Cent Supreme APK
 
 on:
   push:
@@ -23,23 +23,23 @@ jobs:
       with:
         flutter-version: '3.19.0'
 
-    # مسح المجلد المعطوب وبناء واحد جديد تماماً باسم متوافق
-    - name: Nuclear Clean & Fresh Android
-      run: |
-        rm -rf android/
-        flutter create . --platforms android --project-name smart_music_app
+    # خطوة التأكد من الصلاحيات لملف البايثون
+    - name: Prepare Scripts
+      run: chmod +x project_sovereign.py
 
-    # تشغيل الجراح لإعادة حقن minSdkVersion 21 في المجلد الجديد
-    - name: Run Surgical Fix
+    # تشغيل ملف البايثون الجراحي (مهم جداً لفحص الكود الجديد والقديم وحقن minSdkVersion)
+    - name: Run Sovereign Surgical Fix
       run: python3 project_sovereign.py .
 
     - name: Get Dependencies
       run: |
-        flutter pub cache clean -f
         flutter pub get
+        # نستخدم هذه الخطوة لضمان مطابقة النسخ في الملفات التي عدلناها
+        flutter pub upgrade
 
     - name: Build APK
       run: |
+        # بناء الـ APK مع تعطيل القيود التي قد تسببها بقايا الملفات المحذوفة
         flutter build apk --release \
           --no-tree-shake-icons \
           --extra-front-end-options=--no-sound-null-safety
@@ -47,6 +47,6 @@ jobs:
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: release-apk
+        name: Cent-Supreme-Release
         path: build/app/outputs/flutter-apk/app-release.apk
         
