@@ -4,9 +4,7 @@ buildscript {
         google()
         mavenCentral()
     }
-
     dependencies {
-        // استخدام إصدار مستقر يدعم Java 17 و SDK 34/35 بامتياز
         classpath 'com.android.tools.build:gradle:8.1.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
@@ -23,32 +21,10 @@ rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
-
-// ضمان أن عملية التقييم تبدأ من التطبيق الرئيسي أولاً
 subprojects {
     project.evaluationDependsOn(':app')
 }
 
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
-}
-
-// إعدادات التوافق العالمية - تمنع أخطاء الـ Namespace التي تظهر في المشاريع الضخمة
-subprojects {
-    afterEvaluate { project ->
-        if (project.hasProperty('android')) {
-            project.android {
-                // حل مشكلة الـ Namespace للمكتبات القديمة تلقائياً
-                if (namespace == null || namespace.isEmpty()) {
-                    namespace = "com.cent.music"
-                }
-                
-                // توحيد إصدار جافا في كل المكتبات الفرعية لمنع تعارض الـ Bytecode
-                compileOptions {
-                    sourceCompatibility JavaVersion.VERSION_17
-                    targetCompatibility JavaVersion.VERSION_17
-                }
-            }
-        }
-    }
 }
