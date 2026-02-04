@@ -1,5 +1,5 @@
 // lib/core/audio_kernel.dart
-// Fixed for just_audio 0.9.46 (no errorStream, no androidOffloadToHardware)
+// Final fixed version for Flutter 3.24.3 + just_audio 0.9.46
 
 import 'dart:async';
 import 'dart:io';
@@ -89,11 +89,9 @@ class AudioKernel {
         }
       });
 
-      // Error handling in 0.9.46: use playbackEventStream.onError
+      // Error handling via playbackEventStream (0.9.46 compatible)
       _player.playbackEventStream.listen(
-        (event) {
-          // normal events
-        },
+        (event) {},
         onError: (error) {
           _state.add(AudioState.error);
           debugPrint('Audio error: $error');
@@ -159,7 +157,7 @@ class AudioKernel {
   Future<void> setVolume(double vol) => _player.setVolume(vol.clamp(0.0, 1.0));
 
   Future<void> next() async {
-    stop(); // TODO: add playlist logic if needed
+    stop(); // TODO: playlist next
   }
 
   Future<void> dispose() async {
