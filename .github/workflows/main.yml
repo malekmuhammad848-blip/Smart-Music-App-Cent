@@ -55,21 +55,19 @@ jobs:
     - name: Update ProGuard rules
       run: |
         if [ -f "android/app/proguard-rules.pro" ]; then
-          cat << 'EOF' >> android/app/proguard-rules.pro
-
-# Play Core Libraries (Missing classes fix)
--keep class com.google.android.play.core.** { *; }
--keep class com.google.android.play.** { *; }
--dontwarn com.google.android.play.**
-
-# YouTube Explode support
--keep class com.github.** { *; }
--dontwarn com.github.**
-
-# Additional Flutter support
--keep class androidx.lifecycle.** { *; }
--keep class com.google.android.material.** { *; }
-EOF
+          echo '' >> android/app/proguard-rules.pro
+          echo '# Play Core Libraries (Missing classes fix)' >> android/app/proguard-rules.pro
+          echo '-keep class com.google.android.play.core.** { *; }' >> android/app/proguard-rules.pro
+          echo '-keep class com.google.android.play.** { *; }' >> android/app/proguard-rules.pro
+          echo '-dontwarn com.google.android.play.**' >> android/app/proguard-rules.pro
+          echo '' >> android/app/proguard-rules.pro
+          echo '# YouTube Explode support' >> android/app/proguard-rules.pro
+          echo '-keep class com.github.** { *; }' >> android/app/proguard-rules.pro
+          echo '-dontwarn com.github.**' >> android/app/proguard-rules.pro
+          echo '' >> android/app/proguard-rules.pro
+          echo '# Additional Flutter support' >> android/app/proguard-rules.pro
+          echo '-keep class androidx.lifecycle.** { *; }' >> android/app/proguard-rules.pro
+          echo '-keep class com.google.android.material.** { *; }' >> android/app/proguard-rules.pro
         fi
         
     - name: Create local.properties
