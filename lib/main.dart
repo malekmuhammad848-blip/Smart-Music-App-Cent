@@ -7,7 +7,7 @@ import 'core/audio_kernel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AudioKernel(); // init audio
+  await AudioKernel().initialize(); // init audio with proper method
   runApp(const CentApp());
 }
 
