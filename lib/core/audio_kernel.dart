@@ -111,10 +111,19 @@ class AudioKernel {
       _state.add(AudioState.loading);
       _currentTrack.add(track);
 
+      AudioSource source;
+
       final cached = await _getCachedFile(track.uri);
-      final source = cached != null
-          ? LockCachingAudioSource(Uri.file(cached.path))
-          : LockCachingAudioSource(Uri.parse(track.uri));
+      if (cached != null) {
+        source = AudioSource.uri(Uri.file(cached.path));
+      } else {
+        try {
+          source = LockCachingAudioSource(Uri.parse(track.uri));
+        } catch (e) {
+          debugPrint('LockCaching failed, using direct source: $e');
+          source = AudioSource.uri(Uri.parse(track.uri));
+        }
+      }
 
       await _player.setAudioSource(source, preload: true);
 
@@ -126,6 +135,15 @@ class AudioKernel {
     } catch (e) {
       _state.add(AudioState.error);
       debugPrint('Play error: $e');
+
+      try {
+        final source = AudioSource.uri(Uri.parse(track.uri));
+        await _player.setAudioSource(source);
+        await _player.play();
+        _state.add(AudioState.playing);
+      } catch (fallbackError) {
+        debugPrint('Fallback play also failed: $fallbackError');
+      }
     }
   }
 
