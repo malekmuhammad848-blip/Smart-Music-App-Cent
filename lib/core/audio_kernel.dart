@@ -1,5 +1,5 @@
 // lib/core/audio_kernel.dart
-// Fixed version for just_audio 0.9.46 + audio_session 0.1.25
+// Fixed for just_audio 0.9.46 (no errorStream, no androidOffloadToHardware)
 
 import 'dart:async';
 import 'dart:io';
@@ -41,20 +41,17 @@ class AudioKernel {
   final _player = AudioPlayer(
     handleInterruptions: true,
     androidApplyAudioAttributes: true,
-    // androidOffloadToHardware removed - not supported in 0.9.46
   );
 
   final _state = BehaviorSubject<AudioState>.seeded(AudioState.idle);
   final _position = BehaviorSubject<Duration>.seeded(Duration.zero);
   final _duration = BehaviorSubject<Duration?>.seeded(null);
   final _currentTrack = BehaviorSubject<AudioTrack?>.seeded(null);
-  final _errors = PublishSubject<String>();
 
   Stream<AudioState> get stateStream => _state.distinct();
   Stream<Duration> get positionStream => _position;
   Stream<Duration?> get durationStream => _duration;
   Stream<AudioTrack?> get currentTrackStream => _currentTrack;
-  Stream<String> get errorStream => _errors;
 
   AudioState get state => _state.value;
   Duration get position => _position.value;
@@ -70,7 +67,6 @@ class AudioKernel {
 
     try {
       final session = await AudioSession.instance;
-      // Use music preset without extra options (not supported in 0.1.25 music())
       await session.configure(AudioSessionConfiguration.music());
 
       session.interruptionEventStream.listen((event) {
@@ -93,14 +89,20 @@ class AudioKernel {
         }
       });
 
-      _player.errorStream.listen((err) {
-        _state.add(AudioState.error);
-        _errors.add(err.toString());
-      });
+      // Error handling in 0.9.46: use playbackEventStream.onError
+      _player.playbackEventStream.listen(
+        (event) {
+          // normal events
+        },
+        onError: (error) {
+          _state.add(AudioState.error);
+          debugPrint('Audio error: $error');
+        },
+      );
 
       _initialized = true;
     } catch (e) {
-      _errors.add('Init error: $e');
+      debugPrint('Init error: $e');
     }
   }
 
@@ -125,7 +127,7 @@ class AudioKernel {
       }
     } catch (e) {
       _state.add(AudioState.error);
-      _errors.add('Play error: $e');
+      debugPrint('Play error: $e');
     }
   }
 
@@ -157,8 +159,7 @@ class AudioKernel {
   Future<void> setVolume(double vol) => _player.setVolume(vol.clamp(0.0, 1.0));
 
   Future<void> next() async {
-    // TODO: Implement playlist next if needed
-    stop();
+    stop(); // TODO: add playlist logic if needed
   }
 
   Future<void> dispose() async {
@@ -169,7 +170,6 @@ class AudioKernel {
     await _position.close();
     await _duration.close();
     await _currentTrack.close();
-    await _errors.close();
     final session = await AudioSession.instance;
     await session.setActive(false);
   }
