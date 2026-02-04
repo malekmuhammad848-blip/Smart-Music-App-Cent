@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Audio - إصدارات متوافقة مع Flutter 3.24.3 / Dart 3.5.3
+  # Audio - متوافق مع Flutter 3.24.3
   just_audio: ^0.9.46
   audio_session: ^0.1.25
   rxdart: ^0.27.7
@@ -18,7 +18,7 @@ dependencies:
   # UI & Design
   google_fonts: ^6.2.1
   cupertino_icons: ^1.0.8
-  flutter_spinkit: ^5.2.1  # خفض إلى 5.2.1 لتجنب withValues error (5.2.2 يحتاج Flutter أحدث)
+  flutter_spinkit: ^5.2.1  # 5.2.1 لا يستخدم withValues (5.2.2 يسبب الخطأ)
   cached_network_image: ^3.4.0
 
   # System & Permissions
