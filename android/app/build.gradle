@@ -8,7 +8,11 @@ if (localPropertiesFile.exists()) {
 
 def flutterRoot = localProperties.getProperty('flutter.sdk')
 if (flutterRoot == null) {
-    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
+    flutterRoot = System.getenv('FLUTTER_ROOT')
+}
+
+if (flutterRoot == null) {
+    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file or FLUTTER_ROOT environment variable.")
 }
 
 def flutterVersionCode = localProperties.getProperty('flutter.versionCode') ?: '1'
@@ -20,7 +24,7 @@ apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
     namespace "com.cent.music"
-    compileSdkVersion 34  // يمكن 35 إذا أردت لاحقاً
+    compileSdk 34
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -37,26 +41,16 @@ android {
 
     defaultConfig {
         applicationId "com.cent.music"
-        minSdkVersion 21
-        targetSdkVersion 34
+        minSdk 21
+        targetSdk 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true
     }
 
-    signingConfigs {
-        release {
-            // إذا كان لديك key.properties، أضف هنا
-            // storeFile file("your.keystore")
-            // storePassword "password"
-            // keyAlias "alias"
-            // keyPassword "password"
-        }
-    }
-
     buildTypes {
         release {
-            signingConfig signingConfigs.debug  // غيّر إلى release إذا أضفت signing
+            signingConfig signingConfigs.debug
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -69,6 +63,8 @@ flutter {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.22"
     implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.9.0'
 }
