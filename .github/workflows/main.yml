@@ -37,6 +37,22 @@ jobs:
         # حذف قسم export في النهاية
         sed -i '/^\/\/ Export key components/,/^FFTProcessor;/d' lib/core/audio_kernel.dart
         
+    - name: Fix AndroidManifest.xml
+      run: |
+        # حذف package من AndroidManifest.xml
+        sed -i '/package="[^"]*"/d' android/app/src/main/AndroidManifest.xml
+        
+        # إضافة label إذا لم يكن موجوداً
+        if ! grep -q 'android:label="Cent Music"' android/app/src/main/AndroidManifest.xml; then
+            sed -i 's/android:label="[^"]*"/android:label="Cent Music"/g' android/app/src/main/AndroidManifest.xml
+        fi
+        
+    - name: Update build.gradle namespace
+      run: |
+        # تأكيد namespace في build.gradle
+        sed -i 's/namespace "com\.example\.cent"/namespace "com.cent.music"/g' android/app/build.gradle
+        sed -i 's/applicationId "com\.example\.cent"/applicationId "com.cent.music"/g' android/app/build.gradle
+        
     - name: Create local.properties
       run: |
         echo "sdk.dir=$ANDROID_HOME" > android/local.properties
