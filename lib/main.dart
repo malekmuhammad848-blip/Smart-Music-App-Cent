@@ -1,18 +1,43 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:google_fonts/google_fonts.dart'; // لخطوط أنيقة مثل Spotify
+import 'package:cached_network_image/cached_network_image.dart'; // لصور أفضل
+import 'package:flutter_spinkit/flutter_spinkit.dart'; // للـ loading
 import 'core/audio_kernel.dart';
 
-void main() => runApp(const CentApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AudioKernel(); // init audio
+  runApp(const CentApp());
+}
 
 class CentApp extends StatelessWidget {
   const CentApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
-        primaryColor: const Color(0xFFD4AF37),
-        scaffoldBackgroundColor: const Color(0xFF000000),
+        primaryColor: const Color(0xFFD4AF37), // الذهبي الرئيسي
+        scaffoldBackgroundColor: const Color(0xFF121212), // أسود سبوتيفاي
+        colorScheme: ColorScheme.fromSwatch().copyWith(
+          secondary: const Color(0xFFD4AF37), // accents ذهبية
+          brightness: Brightness.dark,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        cardTheme: CardTheme(
+          color: const Color(0xFF1E1E1E),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 4,
+          shadowColor: const Color(0xFFD4AF37).withOpacity(0.2),
+        ),
+        textTheme: GoogleFonts.poppinsTextTheme(
+          Theme.of(context).textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white),
+        ),
       ),
       home: const MainSovereignScreen(),
     );
@@ -21,6 +46,7 @@ class CentApp extends StatelessWidget {
 
 class MainSovereignScreen extends StatefulWidget {
   const MainSovereignScreen({super.key});
+
   @override
   State<MainSovereignScreen> createState() => _MainSovereignScreenState();
 }
@@ -32,6 +58,7 @@ class _MainSovereignScreenState extends State<MainSovereignScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       body: Stack(
         children: [
           IndexedStack(
@@ -42,7 +69,6 @@ class _MainSovereignScreenState extends State<MainSovereignScreen> {
               _buildFavoritesTab(),
             ],
           ),
-          // المشغل العائم (مثل تطبيقات الموسيقى العالمية)
           Positioned(bottom: 0, left: 0, right: 0, child: _buildGlobalMiniPlayer()),
         ],
       ),
@@ -50,163 +76,284 @@ class _MainSovereignScreenState extends State<MainSovereignScreen> {
     );
   }
 
-  // --- واجهة الصفحة الرئيسية (التريندات وآخر المسموع) ---
+  // الصفحة الرئيسية (مثل Spotify Home)
   Widget _buildHomeTab() {
     return CustomScrollView(
       slivers: [
-        _buildSliverAppBar(),
+        SliverAppBar(
+          expandedHeight: 180,
+          floating: false,
+          pinned: true,
+          flexibleSpace: FlexibleSpaceBar(
+            background: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF1A1A1A), Color(0xFF000000)],
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  "CENT",
+                  style: GoogleFonts.michroma(
+                    fontSize: 60,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFD4AF37),
+                    letterSpacing: 4,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
         SliverToBoxAdapter(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSectionTitle("Recently Played"),
-              _buildRecentList(), // آخر الأغاني
-              _buildSectionTitle("Global Trending"),
-              _buildTrendingGrid(), // التريندات
-              const SizedBox(height: 120), // مساحة للمشغل السفلي
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionTitle("Good Evening"),
+                _buildRecentGrid(), // كروت كبيرة مثل Spotify
+                const SizedBox(height: 24),
+                _buildSectionTitle("Trending Now"),
+                _buildTrendingList(),
+                const SizedBox(height: 100), // مساحة للمشغل
+              ],
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSliverAppBar() {
-    return const SliverAppBar(
-      expandedHeight: 120,
-      backgroundColor: Colors.black,
-      flexibleSpace: FlexibleSpaceBar(
-        titlePadding: EdgeInsets.only(left: 20, bottom: 16),
-        title: Text("CENT SUPREME", style: TextStyle(color: Color(0xFFD4AF37), fontWeight: FontWeight.bold, letterSpacing: 2)),
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        title,
+        style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold),
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+  // كروت ألبومات كبيرة (مثل Spotify)
+  Widget _buildRecentGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 1.2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+      ),
+      itemCount: 6,
+      itemBuilder: (context, index) {
+        return Card(
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: CachedNetworkImage(
+                  imageUrl: "https://picsum.photos/300?random=$index",
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => const SpinKitPulse(color: Color(0xFFD4AF37)),
+                  errorWidget: (context, url, error) => const Icon(Icons.error),
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+                    ),
+                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                  ),
+                  child: Text(
+                    "Playlist ${index + 1}",
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  // قائمة "آخر الأغاني"
-  Widget _buildRecentList() {
+  Widget _buildTrendingList() {
     return SizedBox(
       height: 180,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
         itemCount: 5,
-        itemBuilder: (context, i) => Container(
-          width: 140,
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15),
-            image: const DecorationImage(image: NetworkImage("https://picsum.photos/200"), fit: BoxFit.cover),
-          ),
-          child: Container(
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(15), gradient: LinearGradient(begin: Alignment.bottomCenter, colors: [Colors.black.withOpacity(0.8), Colors.transparent])),
-            alignment: Alignment.bottomLeft,
-            padding: const EdgeInsets.all(10),
-            child: const Text("Recent Track", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-          ),
-        ),
+        itemBuilder: (context, index) {
+          return Container(
+            width: 140,
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            child: Column(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: CachedNetworkImage(
+                    imageUrl: "https://picsum.photos/200?random=${index + 10}",
+                    height: 140,
+                    width: 140,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text("Trending ${index + 1}", style: const TextStyle(fontSize: 14)),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
-  // شبكة "التريندات"
-  Widget _buildTrendingGrid() {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 15, crossAxisSpacing: 15, childAspectRatio: 1.5),
-      itemCount: 4,
-      itemBuilder: (context, i) => Container(
-        decoration: BoxDecoration(color: const Color(0xFF111111), borderRadius: BorderRadius.circular(15), border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.2))),
-        child: const Row(
+  // صفحة البحث (مثل Spotify Search)
+  Widget _buildSearchTab() {
+    return SafeArea(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: "What do you want to listen to?",
+                hintStyle: const TextStyle(color: Colors.grey),
+                prefixIcon: const Icon(Icons.search, color: Color(0xFFD4AF37)),
+                filled: true,
+                fillColor: const Color(0xFF1E1E1E),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(50),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Center(
+              child: Text(
+                "Browse all",
+                style: GoogleFonts.poppins(fontSize: 18, color: Colors.grey),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // صفحة المفضلة (Library مثل Spotify)
+  Widget _buildFavoritesTab() {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(padding: EdgeInsets.all(8.0), child: Icon(Icons.trending_up, color: Color(0xFFD4AF37))),
-            Text("Trending #1"),
+            Text("Your Library", style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            const Text("Playlists • Artists • Albums", style: TextStyle(color: Colors.grey)),
+            // أضف ListView للمفضلات هنا لاحقًا
+            const Expanded(child: Center(child: Text("Your Golden Favorites", style: TextStyle(fontSize: 20, color: Color(0xFFD4AF37))))),
           ],
         ),
       ),
     );
   }
 
-  // --- واجهة البحث ---
-  Widget _buildSearchTab() {
-    return SafeArea(
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: TextField(
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: const Color(0xFF111111),
-                prefixIcon: const Icon(Icons.search, color: Color(0xFFD4AF37)),
-                hintText: "Search artist, songs...",
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
-              ),
-            ),
-          ),
-          const Expanded(child: Center(child: Text("Search Engine Ready"))),
-        ],
-      ),
-    );
-  }
-
-  // --- واجهة المفضلة ---
-  Widget _buildFavoritesTab() {
-    return const Center(child: Text("Your Golden Collection", style: TextStyle(color: Color(0xFFD4AF37))));
-  }
-
-  // --- المشغل العالمي (Mini-Player) ---
+  // المشغل المصغر المحسن (مع progress bar)
   Widget _buildGlobalMiniPlayer() {
     return StreamBuilder<AudioTrack?>(
       stream: _kernel.currentTrackStream,
       builder: (context, snapshot) {
-        return ClipRRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              height: 80,
-              margin: const EdgeInsets.all(10),
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A).withOpacity(0.9),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.4)),
-              ),
-              child: Row(
-                children: [
-                  const CircleAvatar(radius: 25, backgroundImage: NetworkImage("https://picsum.photos/100")),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(snapshot.data?.title ?? "Select Track", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        Text(snapshot.data?.artist ?? "Cent Music", style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                      ],
+        final track = snapshot.data;
+        return GestureDetector(
+          onTap: () {
+            // انتقل إلى صفحة المشغل الكامل لاحقًا
+          },
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                height: 90,
+                margin: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E1E).withOpacity(0.85),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFD4AF37).withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: CachedNetworkImage(
+                        imageUrl: track?.coverArt ?? "https://picsum.photos/100",
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => const SpinKitThreeBounce(color: Color(0xFFD4AF37), size: 20),
+                      ),
                     ),
-                  ),
-                  IconButton(icon: const Icon(Icons.skip_previous), onPressed: () => _kernel.previous()),
-                  StreamBuilder<AudioState>(
-                    stream: _kernel.stateStream,
-                    builder: (context, s) {
-                      final isPlaying = s.data == AudioState.playing;
-                      return IconButton(
-                        icon: Icon(isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled, size: 40, color: const Color(0xFFD4AF37)),
-                        onPressed: () => isPlaying ? _kernel.pause() : _kernel.play(),
-                      );
-                    },
-                  ),
-                  IconButton(icon: const Icon(Icons.skip_next), onPressed: () => _kernel.next()),
-                ],
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            track?.title ?? "No Track Playing",
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            track?.artist ?? "Cent Music",
+                            style: const TextStyle(color: Colors.grey, fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.skip_previous, color: Color(0xFFD4AF37)),
+                      onPressed: _kernel.previous,
+                    ),
+                    StreamBuilder<AudioState>(
+                      stream: _kernel.stateStream,
+                      builder: (context, s) {
+                        final isPlaying = s.data == AudioState.playing;
+                        return IconButton(
+                          icon: Icon(
+                            isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                            size: 50,
+                            color: const Color(0xFFD4AF37),
+                          ),
+                          onPressed: () => isPlaying ? _kernel.pause() : _kernel.play(),
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.skip_next, color: Color(0xFFD4AF37)),
+                      onPressed: _kernel.next,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -219,12 +366,14 @@ class _MainSovereignScreenState extends State<MainSovereignScreen> {
     return BottomNavigationBar(
       currentIndex: _selectedTab,
       onTap: (i) => setState(() => _selectedTab = i),
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF000000),
       selectedItemColor: const Color(0xFFD4AF37),
+      unselectedItemColor: Colors.grey,
+      type: BottomNavigationBarType.fixed,
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-        BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
-        BottomNavigationBarItem(icon: Icon(Icons.favorite), label: "Favorites"),
+        BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: "Home"),
+        BottomNavigationBarItem(icon: Icon(Icons.search_rounded), label: "Search"),
+        BottomNavigationBarItem(icon: Icon(Icons.library_music_rounded), label: "Library"),
       ],
     );
   }
