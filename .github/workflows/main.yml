@@ -2,165 +2,66 @@ name: Build Cent APK
 
 on:
   push:
-    branches: [ main, master ]
-  pull_request:
     branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  build-android:
+  build:
     runs-on: ubuntu-latest
     
     steps:
-    # 1. جلب الكود
     - name: Checkout repository
       uses: actions/checkout@v4
       
-    # 2. إعداد Java
-    - name: Setup Java JDK 17
+    - name: Setup Java
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
         
-    # 3. إعداد Flutter
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.19.0'
         channel: 'stable'
         
-    # 4. إصلاح AndroidManifest.xml
     - name: Fix AndroidManifest.xml
       run: |
-        # تأكد من وجود الملف
         if [ -f "android/app/src/main/AndroidManifest.xml" ]; then
-          # حذف package من AndroidManifest.xml
           sed -i '/package="[^"]*"/d' android/app/src/main/AndroidManifest.xml
-          
-          # حذف الأيقونة المخصصة
           sed -i '/android:icon="@mipmap\/ic_launcher"/d' android/app/src/main/AndroidManifest.xml
-          
-          # تأكيد اسم التطبيق
           if ! grep -q 'android:label="Cent Music"' android/app/src/main/AndroidManifest.xml; then
             sed -i 's/android:label="[^"]*"/android:label="Cent Music"/g' android/app/src/main/AndroidManifest.xml
           fi
-          
           echo "✅ AndroidManifest.xml fixed"
-        else
-          echo "⚠️ AndroidManifest.xml not found, creating new one"
-          mkdir -p android/app/src/main
-          cat > android/app/src/main/AndroidManifest.xml << 'EOF'
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    
-    <application
-        android:label="Cent Music"
-        android:name="${applicationName}"
-        android:allowBackup="true"
-        android:supportsRtl="true">
-        
-        <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:launchMode="singleTop"
-            android:theme="@style/LaunchTheme"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-            android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustResize">
-            
-            <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme"/>
-            
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-        </activity>
-        
-        <meta-data
-            android:name="flutterEmbedding"
-            android:value="2"/>
-    </application>
-</manifest>
-EOF
         fi
         
-    # 5. إصلاح build.gradle
-    - name: Fix build.gradle
+    - name: Update build.gradle
       run: |
-        # تحديث namespace و applicationId
         if [ -f "android/app/build.gradle" ]; then
           sed -i 's/namespace "com\.example\.[^"]*"/namespace "com.cent.music"/g' android/app/build.gradle
           sed -i 's/applicationId "com\.example\.[^"]*"/applicationId "com.cent.music"/g' android/app/build.gradle
-          
-          # تأكد من وجود minSdkVersion 21
           if ! grep -q 'minSdkVersion 21' android/app/build.gradle; then
             sed -i 's/minSdkVersion [0-9]*/minSdkVersion 21/g' android/app/build.gradle
           fi
-          
           echo "✅ build.gradle fixed"
         fi
         
-        # إضافة jcenter إلى android/build.gradle
-        if [ -f "android/build.gradle" ]; then
-          if ! grep -q 'jcenter()' android/build.gradle; then
-            sed -i '/repositories {/a\        jcenter()' android/build.gradle
-          fi
-        fi
-        
-    # 6. إصلاح audio_kernel.dart
-    - name: Fix audio_kernel.dart
-      run: |
-        if [ -f "lib/core/audio_kernel.dart" ]; then
-          # إصلاح event.state إلى event.processingState
-          sed -i 's/event\.state == ja\.ProcessingState\.idle/event.processingState == ja.ProcessingState.idle/g' lib/core/audio_kernel.dart
-          
-          # إصلاح ListQueue إلى List
-          sed -i 's/final _playlist = ListQueue<AudioTrack>();/final List<AudioTrack> _playlist = [];/g' lib/core/audio_kernel.dart
-          sed -i 's/final _originalPlaylist = ListQueue<AudioTrack>();/final List<AudioTrack> _originalPlaylist = [];/g' lib/core/audio_kernel.dart
-          
-          # حذف قسم export في النهاية
-          sed -i '/^\/\/ ============================================/,/^FFTProcessor;/d' lib/core/audio_kernel.dart
-          
-          echo "✅ audio_kernel.dart fixed"
-        fi
-        
-    # 7. إنشاء local.properties
     - name: Create local.properties
       run: |
         echo "sdk.dir=$ANDROID_HOME" > android/local.properties
         echo "flutter.sdk=$FLUTTER_ROOT" >> android/local.properties
-        echo "flutter.versionName=1.0.0" >> android/local.properties
-        echo "flutter.versionCode=1" >> android/local.properties
         
-    # 8. تثبيت التبعيات
     - name: Get Flutter dependencies
       run: |
-        flutter clean
         flutter pub get
         
-    # 9. بناء APK
-    - name: Build APK (Release)
+    - name: Build APK
       run: |
-        flutter build apk --release --no-tree-shake-icons
+        flutter build apk --release
         
-    # 10. رفع الملفات
-    - name: Upload APK artifacts
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: cent-music-apk
         path: build/app/outputs/flutter-apk/app-release.apk
-        retention-days: 30
-        
-    # 11. إظهار معلومات النجاح
-    - name: Show success message
-      if: success()
-      run: |
-        echo "🎵 ==========================================="
-        echo "✅ BUILD SUCCESSFUL!"
-        echo "📱 APK available in Artifacts tab"
-        echo "🎵 ==========================================="
