@@ -4,16 +4,16 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'  # متوافق مع Dart 3.5.3 وأعلى
+  sdk: '>=3.0.0 <4.0.0'  # متوافق مع Dart 3.5.3 (Flutter 3.24.x)
 
 dependencies:
   flutter:
     sdk: flutter
 
   # Audio - إصدارات متوافقة مع Dart 3.5.3
-  just_audio: ^0.10.5
-  audio_session: ^0.1.25  # أحدث إصدار قبل 0.2.0 (متوافق مع Dart ~3.0-3.5)
-  rxdart: ^0.28.0
+  just_audio: ^0.9.46     # أحدث متوافق مع Dart <3.6 (من اقتراح الخطأ)
+  audio_session: ^0.1.25  # متوافق مع Dart 3.5.3
+  rxdart: ^0.27.7         # متوافق مع الإصدارات القديمة
 
   # UI & Design
   google_fonts: ^6.2.1
@@ -41,3 +41,7 @@ flutter:
   uses-material-design: true
   # assets:
   #   - assets/images/
+  # fonts:
+  #   - family: Michroma
+  #     fonts:
+  #       - asset: fonts/Michroma-Regular.ttf
