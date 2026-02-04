@@ -38,20 +38,15 @@ jobs:
     - name: Fix build.gradle (Disable R8)
       run: |
         if [ -f "android/app/build.gradle" ]; then
-          # تحديث namespace و applicationId
           sed -i 's/namespace "com\.example\.[^"]*"/namespace "com.cent.music"/g' android/app/build.gradle
           sed -i 's/applicationId "com\.example\.[^"]*"/applicationId "com.cent.music"/g' android/app/build.gradle
-          
-          # تعطيل minifyEnabled و shrinkResources
           sed -i 's/minifyEnabled true/minifyEnabled false/g' android/app/build.gradle
           sed -i 's/shrinkResources true/shrinkResources false/g' android/app/build.gradle
           
-          # تأكيد minSdkVersion 21
           if ! grep -q 'minSdkVersion 21' android/app/build.gradle; then
             sed -i 's/minSdkVersion [0-9]*/minSdkVersion 21/g' android/app/build.gradle
           fi
           
-          # إضافة multiDexEnabled
           if ! grep -q 'multiDexEnabled true' android/app/build.gradle; then
             sed -i '/defaultConfig {/a\        multiDexEnabled true' android/app/build.gradle
           fi
@@ -60,8 +55,7 @@ jobs:
     - name: Update ProGuard rules
       run: |
         if [ -f "android/app/proguard-rules.pro" ]; then
-          # إضافة قواعد Play Core المفقودة
-          cat >> android/app/proguard-rules.pro << 'EOF'
+          cat << 'EOF' >> android/app/proguard-rules.pro
 
 # Play Core Libraries (Missing classes fix)
 -keep class com.google.android.play.core.** { *; }
