@@ -12,15 +12,8 @@ if (localPropertiesFile.exists()) {
     }
 }
 
-def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
-if (flutterVersionCode == null) {
-    flutterVersionCode = '1'
-}
-
-def flutterVersionName = localProperties.getProperty('flutter.versionName')
-if (flutterVersionName == null) {
-    flutterVersionName = '1.0'
-}
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode') ?: '1'
+def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '1.0'
 
 android {
     namespace "com.cent.music"
@@ -35,10 +28,6 @@ android {
         jvmTarget = '17'
     }
 
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
-    }
-
     defaultConfig {
         applicationId "com.cent.music"
         minSdk 21
@@ -46,14 +35,9 @@ android {
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
-
-    buildTypes {
-        release {
-            signingConfig signingConfigs.debug
-        }
-    }
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    // تم إصلاح السطر أدناه ليعمل حتى لو لم يجد المتغير
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.10"
 }
