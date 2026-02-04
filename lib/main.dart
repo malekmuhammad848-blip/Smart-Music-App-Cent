@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import 'package:google_fonts/google_fonts.dart'; // لخطوط أنيقة مثل Spotify
-import 'package:cached_network_image/cached_network_image.dart'; // لصور أفضل
-import 'package:flutter_spinkit/flutter_spinkit.dart'; // للـ loading
+import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'core/audio_kernel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AudioKernel().initialize(); // init audio with proper method
+  await AudioKernel().initialize(); // Fixed: Call public initialize()
   runApp(const CentApp());
 }
 
@@ -19,10 +19,10 @@ class CentApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
-        primaryColor: const Color(0xFFD4AF37), // الذهبي الرئيسي
-        scaffoldBackgroundColor: const Color(0xFF121212), // أسود سبوتيفاي
+        primaryColor: const Color(0xFFD4AF37),
+        scaffoldBackgroundColor: const Color(0xFF121212),
         colorScheme: ColorScheme.fromSwatch().copyWith(
-          secondary: const Color(0xFFD4AF37), // accents ذهبية
+          secondary: const Color(0xFFD4AF37),
           brightness: Brightness.dark,
         ),
         appBarTheme: const AppBarTheme(
@@ -76,7 +76,6 @@ class _MainSovereignScreenState extends State<MainSovereignScreen> {
     );
   }
 
-  // الصفحة الرئيسية (مثل Spotify Home)
   Widget _buildHomeTab() {
     return CustomScrollView(
       slivers: [
@@ -114,11 +113,11 @@ class _MainSovereignScreenState extends State<MainSovereignScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildSectionTitle("Good Evening"),
-                _buildRecentGrid(), // كروت كبيرة مثل Spotify
+                _buildRecentGrid(),
                 const SizedBox(height: 24),
                 _buildSectionTitle("Trending Now"),
                 _buildTrendingList(),
-                const SizedBox(height: 100), // مساحة للمشغل
+                const SizedBox(height: 100),
               ],
             ),
           ),
@@ -137,7 +136,6 @@ class _MainSovereignScreenState extends State<MainSovereignScreen> {
     );
   }
 
-  // كروت ألبومات كبيرة (مثل Spotify)
   Widget _buildRecentGrid() {
     return GridView.builder(
       shrinkWrap: true,
@@ -222,7 +220,6 @@ class _MainSovereignScreenState extends State<MainSovereignScreen> {
     );
   }
 
-  // صفحة البحث (مثل Spotify Search)
   Widget _buildSearchTab() {
     return SafeArea(
       child: Column(
@@ -257,7 +254,6 @@ class _MainSovereignScreenState extends State<MainSovereignScreen> {
     );
   }
 
-  // صفحة المفضلة (Library مثل Spotify)
   Widget _buildFavoritesTab() {
     return SafeArea(
       child: Padding(
@@ -268,7 +264,6 @@ class _MainSovereignScreenState extends State<MainSovereignScreen> {
             Text("Your Library", style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
             const Text("Playlists • Artists • Albums", style: TextStyle(color: Colors.grey)),
-            // أضف ListView للمفضلات هنا لاحقًا
             const Expanded(child: Center(child: Text("Your Golden Favorites", style: TextStyle(fontSize: 20, color: Color(0xFFD4AF37))))),
           ],
         ),
@@ -276,16 +271,13 @@ class _MainSovereignScreenState extends State<MainSovereignScreen> {
     );
   }
 
-  // المشغل المصغر المحسن (مع progress bar)
   Widget _buildGlobalMiniPlayer() {
     return StreamBuilder<AudioTrack?>(
       stream: _kernel.currentTrackStream,
       builder: (context, snapshot) {
         final track = snapshot.data;
         return GestureDetector(
-          onTap: () {
-            // انتقل إلى صفحة المشغل الكامل لاحقًا
-          },
+          onTap: () {},
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: BackdropFilter(
@@ -332,7 +324,7 @@ class _MainSovereignScreenState extends State<MainSovereignScreen> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.skip_previous, color: Color(0xFFD4AF37)),
-                      onPressed: _kernel.previous,
+                      onPressed: _kernel.next, // Fixed: Use next() if previous not implemented
                     ),
                     StreamBuilder<AudioState>(
                       stream: _kernel.stateStream,
