@@ -4,15 +4,15 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'  # توسيع ليشمل Dart 3.5.3 (Flutter 3.24+) ويحافظ على توافق عام
+  sdk: '>=3.0.0 <4.0.0'  # متوافق مع Dart 3.5.3 وأعلى
 
 dependencies:
   flutter:
     sdk: flutter
 
-  # Audio - إصدارات حديثة متوافقة مع Dart 3.5+
+  # Audio - إصدارات متوافقة مع Dart 3.5.3
   just_audio: ^0.10.5
-  audio_session: ^0.2.2
+  audio_session: ^0.1.25  # أحدث إصدار قبل 0.2.0 (متوافق مع Dart ~3.0-3.5)
   rxdart: ^0.28.0
 
   # UI & Design
@@ -26,7 +26,7 @@ dependencies:
   crypto: ^3.0.5
   permission_handler: ^11.3.1
 
-  # YouTube (اختياري، لكن حدث إذا كنت تستخدم)
+  # YouTube (اختياري)
   youtube_explode_dart: ^2.2.2
 
   # State
@@ -39,6 +39,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  # أضف assets/fonts إذا أردت
   # assets:
   #   - assets/images/
