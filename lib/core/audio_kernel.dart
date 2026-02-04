@@ -1,10 +1,8 @@
 // lib/core/audio_kernel.dart
-// Enhanced Professional Audio Engine - Fixed & Optimized (Music Mode, Background, High Quality)
+// Fixed version for just_audio 0.9.46 + audio_session 0.1.25
 
 import 'dart:async';
-import 'dart:collection';
 import 'dart:io';
-import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
@@ -14,7 +12,6 @@ import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
 enum AudioState { idle, loading, buffering, playing, paused, stopped, error }
-enum RepeatMode { none, one, all }
 
 class AudioTrack {
   final String id;
@@ -44,7 +41,7 @@ class AudioKernel {
   final _player = AudioPlayer(
     handleInterruptions: true,
     androidApplyAudioAttributes: true,
-    androidOffloadToHardware: true,
+    // androidOffloadToHardware removed - not supported in 0.9.46
   );
 
   final _state = BehaviorSubject<AudioState>.seeded(AudioState.idle);
@@ -73,9 +70,8 @@ class AudioKernel {
 
     try {
       final session = await AudioSession.instance;
-      await session.configure(const AudioSessionConfiguration.music(
-        avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.allowBluetooth | AVAudioSessionCategoryOptions.defaultToSpeaker,
-      ));
+      // Use music preset without extra options (not supported in 0.1.25 music())
+      await session.configure(AudioSessionConfiguration.music());
 
       session.interruptionEventStream.listen((event) {
         if (event.begin) {
@@ -161,7 +157,7 @@ class AudioKernel {
   Future<void> setVolume(double vol) => _player.setVolume(vol.clamp(0.0, 1.0));
 
   Future<void> next() async {
-    // TODO: Implement playlist logic if needed
+    // TODO: Implement playlist next if needed
     stop();
   }
 
