@@ -5,7 +5,7 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:  # للتفعيل اليدوي
+  workflow_dispatch:
 
 jobs:
   build-android:
@@ -38,7 +38,7 @@ jobs:
           # حذف package من AndroidManifest.xml
           sed -i '/package="[^"]*"/d' android/app/src/main/AndroidManifest.xml
           
-          # حذف الأيقونة المخصصة (إذا كانت موجودة)
+          # حذف الأيقونة المخصصة
           sed -i '/android:icon="@mipmap\/ic_launcher"/d' android/app/src/main/AndroidManifest.xml
           
           # تأكيد اسم التطبيق
@@ -58,7 +58,7 @@ jobs:
     
     <application
         android:label="Cent Music"
-        android:name="\${applicationName}"
+        android:name="${applicationName}"
         android:allowBackup="true"
         android:supportsRtl="true">
         
@@ -109,13 +109,10 @@ EOF
         if [ -f "android/build.gradle" ]; then
           if ! grep -q 'jcenter()' android/build.gradle; then
             sed -i '/repositories {/a\        jcenter()' android/build.gradle
-            sed -i '/allprojects {/,/}/ {
-              /repositories {/a\        jcenter()
-            }' android/build.gradle
           fi
         fi
         
-    # 6. إصلاح audio_kernel.dart (إذا كان موجوداً)
+    # 6. إصلاح audio_kernel.dart
     - name: Fix audio_kernel.dart
       run: |
         if [ -f "lib/core/audio_kernel.dart" ]; then
@@ -126,7 +123,7 @@ EOF
           sed -i 's/final _playlist = ListQueue<AudioTrack>();/final List<AudioTrack> _playlist = [];/g' lib/core/audio_kernel.dart
           sed -i 's/final _originalPlaylist = ListQueue<AudioTrack>();/final List<AudioTrack> _originalPlaylist = [];/g' lib/core/audio_kernel.dart
           
-          # حذف قسم export في النهاية (إن وجد)
+          # حذف قسم export في النهاية
           sed -i '/^\/\/ ============================================/,/^FFTProcessor;/d' lib/core/audio_kernel.dart
           
           echo "✅ audio_kernel.dart fixed"
@@ -139,59 +136,31 @@ EOF
         echo "flutter.sdk=$FLUTTER_ROOT" >> android/local.properties
         echo "flutter.versionName=1.0.0" >> android/local.properties
         echo "flutter.versionCode=1" >> android/local.properties
-        echo "flutter.buildMode=release" >> android/local.properties
         
     # 8. تثبيت التبعيات
     - name: Get Flutter dependencies
       run: |
         flutter clean
         flutter pub get
-        flutter pub upgrade --major-versions
         
-    # 9. التحقق من Flutter
-    - name: Verify Flutter
-      run: |
-        flutter doctor -v
-        flutter analyze
-        
-    # 10. بناء APK
+    # 9. بناء APK
     - name: Build APK (Release)
       run: |
-        flutter build apk --release \
-          --no-tree-shake-icons \
-          --split-per-abi
-          
-    # 11. رفع الملفات الناتجة
+        flutter build apk --release --no-tree-shake-icons
+        
+    # 10. رفع الملفات
     - name: Upload APK artifacts
       uses: actions/upload-artifact@v4
       with:
         name: cent-music-apk
-        path: |
-          build/app/outputs/flutter-apk/app-release.apk
-          build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-          build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+        path: build/app/outputs/flutter-apk/app-release.apk
         retention-days: 30
         
-    # 12. إظهار معلومات التحميل
-    - name: Show download info
+    # 11. إظهار معلومات النجاح
+    - name: Show success message
       if: success()
       run: |
         echo "🎵 ==========================================="
         echo "✅ BUILD SUCCESSFUL!"
-        echo "📱 APK files are available in the Artifacts tab"
-        echo "📦 Files generated:"
-        echo "   - app-release.apk (universal)"
-        echo "   - app-armeabi-v7a-release.apk (32-bit)"
-        echo "   - app-arm64-v8a-release.apk (64-bit)"
+        echo "📱 APK available in Artifacts tab"
         echo "🎵 ==========================================="
-        
-    # 13. في حالة الفشل
-    - name: Upload logs on failure
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-logs
-        path: |
-          flutter.log
-          build.log
-        retention-days: 1
