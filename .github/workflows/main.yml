@@ -8,85 +8,34 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.19.0'
-        channel: 'stable'
-        
-    - name: Fix AndroidManifest.xml
-      run: |
-        if [ -f "android/app/src/main/AndroidManifest.xml" ]; then
-          sed -i '/package="[^"]*"/d' android/app/src/main/AndroidManifest.xml
-          sed -i '/android:icon="@mipmap\/ic_launcher"/d' android/app/src/main/AndroidManifest.xml
-          if ! grep -q 'android:label="Cent Music"' android/app/src/main/AndroidManifest.xml; then
-            sed -i 's/android:label="[^"]*"/android:label="Cent Music"/g' android/app/src/main/AndroidManifest.xml
-          fi
-        fi
-        
-    - name: Fix build.gradle (Disable R8)
-      run: |
-        if [ -f "android/app/build.gradle" ]; then
-          sed -i 's/namespace "com\.example\.[^"]*"/namespace "com.cent.music"/g' android/app/build.gradle
-          sed -i 's/applicationId "com\.example\.[^"]*"/applicationId "com.cent.music"/g' android/app/build.gradle
-          sed -i 's/minifyEnabled true/minifyEnabled false/g' android/app/build.gradle
-          sed -i 's/shrinkResources true/shrinkResources false/g' android/app/build.gradle
-          
-          if ! grep -q 'minSdkVersion 21' android/app/build.gradle; then
-            sed -i 's/minSdkVersion [0-9]*/minSdkVersion 21/g' android/app/build.gradle
-          fi
-          
-          if ! grep -q 'multiDexEnabled true' android/app/build.gradle; then
-            sed -i '/defaultConfig {/a\        multiDexEnabled true' android/app/build.gradle
-          fi
-        fi
-        
-    - name: Update ProGuard rules
-      run: |
-        if [ -f "android/app/proguard-rules.pro" ]; then
-          echo '' >> android/app/proguard-rules.pro
-          echo '# Play Core Libraries (Missing classes fix)' >> android/app/proguard-rules.pro
-          echo '-keep class com.google.android.play.core.** { *; }' >> android/app/proguard-rules.pro
-          echo '-keep class com.google.android.play.** { *; }' >> android/app/proguard-rules.pro
-          echo '-dontwarn com.google.android.play.**' >> android/app/proguard-rules.pro
-          echo '' >> android/app/proguard-rules.pro
-          echo '# YouTube Explode support' >> android/app/proguard-rules.pro
-          echo '-keep class com.github.** { *; }' >> android/app/proguard-rules.pro
-          echo '-dontwarn com.github.**' >> android/app/proguard-rules.pro
-          echo '' >> android/app/proguard-rules.pro
-          echo '# Additional Flutter support' >> android/app/proguard-rules.pro
-          echo '-keep class androidx.lifecycle.** { *; }' >> android/app/proguard-rules.pro
-          echo '-keep class com.google.android.material.** { *; }' >> android/app/proguard-rules.pro
-        fi
-        
-    - name: Create local.properties
-      run: |
-        echo "sdk.dir=$ANDROID_HOME" > android/local.properties
-        echo "flutter.sdk=$FLUTTER_ROOT" >> android/local.properties
-        
-    - name: Get Flutter dependencies
-      run: |
-        flutter pub get
-        
-    - name: Build APK with no R8
-      run: |
-        flutter build apk --release \
-          --no-tree-shake-icons \
-          --split-per-abi
-        
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: cent-music-apk
-        path: build/app/outputs/flutter-apk/app-release.apk
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.3'  # أحدث stable في 2026
+          channel: 'stable'
+          cache: true
+          cache-key: flutter-pub-${{ hashFiles('**/pubspec.lock') }}
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build APK (release, split per ABI)
+        run: flutter build apk --release --split-per-abi --no-tree-shake-icons
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: cent-music-apks
+          path: build/app/outputs/flutter-apk/*.apk
+          if-no-files-found: error
