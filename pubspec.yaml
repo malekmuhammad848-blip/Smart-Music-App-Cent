@@ -9,43 +9,36 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  
-  # Audio Engine (Tested and Verified)
-  just_audio: 0.9.36
-  audio_session: 0.1.18
-  rxdart: 0.27.7
-  
+  # Audio Engine (Updated to latest stable)
+  just_audio: ^0.10.5
+  audio_session: ^0.2.2
+  rxdart: ^0.28.0
   # UI & Design
-  google_fonts: 6.1.0
-  cupertino_icons: 1.0.6
-  flutter_spinkit: 5.2.0
-  cached_network_image: 3.3.0
-  
+  google_fonts: ^6.2.1
+  cupertino_icons: ^1.0.8
+  flutter_spinkit: ^5.2.1
+  cached_network_image: ^3.4.0
   # System & Permissions
-  path_provider: 2.1.2
-  crypto: 3.0.3
-  permission_handler: 11.3.1
-  
+  path_provider: ^2.1.4
+  crypto: ^3.0.5
+  permission_handler: ^11.3.1
   # YouTube Integration
-  youtube_explode_dart: 2.2.2
-  
+  youtube_explode_dart: ^2.2.2  # Check if still works, YouTube changes API often
   # State Management
-  provider: 6.1.1
+  provider: ^6.1.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: 3.0.0
+  flutter_lints: ^4.0.0  # Updated for better linting
 
 flutter:
   uses-material-design: true
-  
-  # Remove or keep based on actual font file
+  # Uncomment and add real fonts/assets if you have them
   # fonts:
   #   - family: Michroma
   #     fonts:
   #       - asset: fonts/Michroma-Regular.ttf
-  
-  # Add assets if they exist
   # assets:
-  #   - assets/
+  #   - assets/images/
+  #   - assets/audio/
