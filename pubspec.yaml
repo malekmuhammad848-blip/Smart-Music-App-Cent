@@ -1,44 +1,48 @@
 name: cent
 description: Cent Music - Professional Audio Streaming Application
-version: 1.0.0+1
 publish_to: 'none'
+version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=2.17.0 <3.4.0'  # توسيع للتوافق مع Dart 3.3.0 وإصدارات audio_session القديمة
 
 dependencies:
   flutter:
     sdk: flutter
-  # Audio Engine (Updated to latest stable)
-  just_audio: ^0.10.5
-  audio_session: ^0.2.2
-  rxdart: ^0.28.0
+
+  # Audio Engine - إصدارات متوافقة مع Dart 3.3.0
+  just_audio: ^0.9.36  # إصدار مستقر ومتوافق، يدعم Dart 3.3.0
+  audio_session: ^0.1.18  # إصدار يعمل مع Dart >=2.17 <3.3 (متوافق مع Flutter الحالي)
+  rxdart: ^0.27.7  # متوافق
+
   # UI & Design
   google_fonts: ^6.2.1
   cupertino_icons: ^1.0.8
   flutter_spinkit: ^5.2.1
   cached_network_image: ^3.4.0
+
   # System & Permissions
   path_provider: ^2.1.4
   crypto: ^3.0.5
   permission_handler: ^11.3.1
-  # YouTube Integration
-  youtube_explode_dart: ^2.2.2  # Check if still works, YouTube changes API often
+
+  # YouTube Integration (إذا كنت تستخدمه لاحقًا)
+  youtube_explode_dart: ^2.2.2
+
   # State Management
   provider: ^6.1.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^4.0.0  # Updated for better linting
+  flutter_lints: ^4.0.0
 
 flutter:
   uses-material-design: true
-  # Uncomment and add real fonts/assets if you have them
+  # أضف assets/fonts إذا كان لديك
+  # assets:
+  #   - assets/images/
   # fonts:
   #   - family: Michroma
   #     fonts:
   #       - asset: fonts/Michroma-Regular.ttf
-  # assets:
-  #   - assets/images/
-  #   - assets/audio/
