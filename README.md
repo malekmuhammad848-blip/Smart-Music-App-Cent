@@ -1,13 +1,15 @@
-# Cent: Supreme Audio Kernel 🚀
+# Cent: Premium Music Player 🎵
 
-**Cent** is a high-performance, industrial-grade audio streaming and visualization engine built with Flutter. It features a massive codebase of **50,000+ lines** designed for high-fidelity audio processing and real-time physics-based visuals.
+**Cent** is a professional, high-performance music streaming application built with Flutter. Designed with an elegant Spotify-inspired interface featuring a premium gold and black color scheme.
 
-## 💎 Core Architecture
-The system is built on a "Kernel" architecture that decouples the audio engine from the visual canvas, allowing for zero-latency synchronization.
+## 💎 Key Features
 
-- **Quantum Audio Engine:** Encrypted streaming with advanced buffering logic.
-- **Hyperspace Visual Engine:** A GPU-accelerated particle system that reacts to FFT frequency data.
-- **Global Orchestrator:** Manages state across 50,000+ lines of reactive code.
+- **Spotify-Like Design:** Clean, modern interface with professional dark theme and gold accents
+- **Advanced Audio Engine:** High-fidelity audio processing with improved streaming reliability
+- **Smooth Animations:** Interactive card animations, button press effects, and transitions
+- **Multi-Language Support:** Full Arabic/English language switching
+- **Professional Settings:** Customizable app preferences and notifications
+- **About Screen:** Beautiful animated "About" page with developer attribution
 
 ## 🛠 Project Structure
 ```text
